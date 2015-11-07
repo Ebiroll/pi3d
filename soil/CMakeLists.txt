@@ -1,0 +1,12 @@
+ADD_LIBRARY(SOIL
+image_DXT.c
+SOIL.h
+image_DXT.h
+stbi_DDS_aug_c.h
+image_helper.c
+stbi_DDS_aug.h
+image_helper.h
+stb_image_aug.c
+SOIL.c
+stb_image_aug.h
+)
