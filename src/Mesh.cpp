@@ -29,6 +29,10 @@ GLint TextureFromFile(const char* path, string directory, bool gamma)
     int numChannels=0;
 
     unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, &numChannels, SOIL_LOAD_RGB);
+    if (image==NULL)
+    {
+        printf("Failed to load texture %s",SOIL_last_result());
+    }
     // Assign texture to ID
     glBindTexture(GL_TEXTURE_2D, textureID);
     glTexImage2D(GL_TEXTURE_2D, 0, gamma ? GL_SRGB : GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
@@ -122,6 +126,8 @@ Mesh::MeshEntry::MeshEntry(aiMesh *mesh,const aiScene *scene) {
 
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 		glEnableVertexAttribArray (0);
+
+
 
 		delete vertices;
 	}
