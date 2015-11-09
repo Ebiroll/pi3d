@@ -15,7 +15,7 @@ extern const char* fs ;
 class Shader
 {
 public:
-    GLuint Program;
+    GLuint      Program;
     // Constructor generates the shader on the fly
     Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLchar* geometryPath = nullptr)
     {

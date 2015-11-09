@@ -79,8 +79,8 @@ const char* vs = GLSL(
         void main()
         {
             gl_Position = projection * view * model * vec4(position, 1.0);
-            texcoord = vec2(position.x , position.y)  + vec2(0.5);
-            //texcoord  =  vtex;
+            //texcoord = vec2(position.x , position.y)  + vec2(0.5);
+            texcoord  =  vtex;
         });
 
 const char* fs = GLSL(
@@ -89,7 +89,7 @@ const char* fs = GLSL(
 
             void main()
             {
-                gl_FragColor = texture2D(tex, texcoord);
+	        gl_FragColor = texture2D(tex, texcoord);
                 //gl_FragColor = vec4(0.0,1.0,0.0,1.0);
                 //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);
             });
@@ -143,8 +143,8 @@ bool firstMouse = true;
 
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
-int screenWidth=800;
-int screenHeigth=600;
+int screenWidth=1280;
+int screenHeigth=1024;
 
 // Backup texture
 GLuint texture1;
@@ -317,14 +317,14 @@ int main(int argc, char* argv[])
    }
 
    glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
-   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2); // We want OpenGL 2.1 ??
-   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 2.1 ??
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // If we don't want the old OpenGL
    //glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
 
-  window = glfwCreateWindow(screenWidth, screenHeigth, "Viewer", NULL, NULL);
+   window = glfwCreateWindow(screenWidth, screenHeigth, "Viewer", NULL, NULL);
 
 
 #ifdef FULL
@@ -348,9 +348,10 @@ int main(int argc, char* argv[])
    glfwMakeContextCurrent(window);
 
 
-   glewExperimental=true; // Needed in core profile
+   //glewExperimental=true; // Needed in core profile
    if (glewInit() != GLEW_OK) {
        std::cout << "System::init() , Failed to initiate glew" << std::endl;
+       exit(0);
        //TRACE("Failed to initiate glew");
    }
 
@@ -392,6 +393,8 @@ int main(int argc, char* argv[])
 
    // Setup some OpenGL options
    glEnable(GL_DEPTH_TEST);
+
+   glEnable(GL_TEXTURE_2D);
 
    // Setup and compile our shaders
    Shader shader(vertex_shader, fragment_shader,geometry_shader);
@@ -530,15 +533,15 @@ while (!glfwWindowShouldClose(window)) {
       if (mdl_index_count>0)
       {
           // Draw mdl :-P
-          //glBindMultiTextureEXT(GL_TEXTURE0, GL_TEXTURE_2D, texture1);
-          //glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
+          glBindMultiTextureEXT(GL_TEXTURE0, GL_TEXTURE_2D, texture1);
+          glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
 
 
-          glBindVertexArray(VAO);
-          glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
+          //glBindVertexArray(VAO);
+          //glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
       }
 
-      if (mesh) mesh->render();
+      if (mesh) mesh->render(shader.Program);
       glfwSwapBuffers(window);
 }
 delete mesh;

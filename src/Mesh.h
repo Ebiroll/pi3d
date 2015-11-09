@@ -35,7 +35,7 @@ public :
 		~MeshEntry();
 
 		void load(aiMesh *mesh);
-		void render();
+		void render(GLuint prog);
 	};
 
 	std::vector<MeshEntry*> meshEntries;
@@ -46,6 +46,6 @@ public:
 	Mesh(const char *filename);
 	~Mesh(void);
 
-	void render();
+	void render(GLuint prog);
 };
 

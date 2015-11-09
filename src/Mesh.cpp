@@ -196,7 +196,7 @@ Mesh::MeshEntry::MeshEntry(aiMesh *mesh,const aiScene *scene) {
 	}
 	
 
-    if(mesh->mMaterialIndex >= 0)
+    if(mesh->mMaterialIndex  >= 0)
     {
 
         aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
@@ -239,7 +239,16 @@ Mesh::MeshEntry::~MeshEntry() {
 /**
 *	Renders this MeshEntry
 **/
-void Mesh::MeshEntry::render() {
+void Mesh::MeshEntry::render(GLuint prog) {
+
+
+       if (textures_loaded.size()>0) {
+	 printf("%d",textures_loaded[0].id);
+	  glActiveTexture(GL_TEXTURE0);
+          glBindTexture(GL_TEXTURE_2D, textures_loaded[0].id);
+          glUniform1i(glGetUniformLocation(prog, "tex"), 0);	   
+       }
+       
 	glBindVertexArray(vao);
 	glDrawElements(GL_TRIANGLES, elementCount, GL_UNSIGNED_INT, NULL);
 	glBindVertexArray(0);
@@ -253,12 +262,12 @@ Mesh::Mesh(const char *filename)
 	Assimp::Importer importer;
 	const aiScene *scene = importer.ReadFile(filename, NULL);
 	if(!scene) {
-		printf("Unable to laod mesh: %s\n", importer.GetErrorString());
-        exit(-1);
+		printf("Unable to load mesh: %s\n", importer.GetErrorString());
+                exit(-1);
 	}
 
 	for(int i = 0; i < scene->mNumMeshes; ++i) {
-        meshEntries.push_back(new Mesh::MeshEntry(scene->mMeshes[i],scene));
+           meshEntries.push_back(new Mesh::MeshEntry(scene->mMeshes[i],scene));
 	}
 }
 
@@ -276,9 +285,9 @@ Mesh::~Mesh(void)
 /**
 *	Renders all loaded MeshEntries
 **/
-void Mesh::render() {
+void Mesh::render(GLuint prog) {
 	for(int i = 0; i < meshEntries.size(); ++i) {
-		meshEntries.at(i)->render();
+		meshEntries.at(i)->render(prog);
 	}
 }
 
