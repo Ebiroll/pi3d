@@ -14,35 +14,37 @@
 #include "shader.h"
 #include "camera.h"
 ////////////////// Default shaders ///////////
+// Nice 2.2 tutorial
+// http://duriansoftware.com/joe/An-intro-to-modern-OpenGL.-Chapter-2.2:-Shaders.html
 
-#define GLSL(src) "#version 440\n" #src
 
-const char* vs = GLSL(
-    layout(location = 0) in vec3 vpos;
-    layout(location = 1) in vec3 vnorm;
-    layout(location = 2) in vec2 vtex;
+#define GLSL(src) "#version 120\n" #src
 
-    out vec2 uv;
-    out vec3 norm;
+/*
+ *
+
+   layout(location = 0) in vec3 vpos;
+   layout(location = 1) in vec3 vnorm;
+   layout(location = 2) in vec2 vtex;
+
     uniform mat4 model;
     uniform mat4 view;
     uniform mat4 projection;
 
-    out gl_PerVertex
-    {
-        vec4 gl_Position;
-    };
-
     void main()
     {
-        uv = vec2(vtex.x, 1.0 - vtex.y);
-        norm = vnorm;
         gl_Position = projection * view * model * vec4(vpos, 1.0f);
-    });
+    }
 
-const char* fs = GLSL(
-    precision highp float;
-    precision highp int;
+
+#version 130
+layout(location = 0) in vec3 vertexPosition_modelspace;
+
+// Setup Vertex Attributes  [NEW]
+glBindAttribLocation (ProgramID, 0, "vertexPosition_modelspace");
+
+//////////////////////////////////////
+
     layout(std140, column_major) uniform;
 
     in vec2 uv;
@@ -57,7 +59,40 @@ const char* fs = GLSL(
         frag_color = vec4(clamp(color.rgb + l, 0, 1), 1.0);
         //frag_color = textureLod(tex, uv, 0);
         //frag_color = vec4(1);
-    });
+    }
+
+
+*/
+
+
+const char* vs = GLSL(
+        attribute vec3 position;
+        attribute vec3 normal;
+        attribute vec2 vtex;
+
+        uniform mat4 model;
+        uniform mat4 view;
+        uniform mat4 projection;
+
+        varying vec2 texcoord;
+
+        void main()
+        {
+            gl_Position = projection * view * model * vec4(position, 1.0);
+            texcoord = vec2(position.x , position.y)  + vec2(0.5);
+            //texcoord  =  vtex;
+        });
+
+const char* fs = GLSL(
+            varying vec2 texcoord;
+            uniform sampler2D tex;
+
+            void main()
+            {
+                //gl_FragColor = texture2D(tex, texcoord);
+                //gl_FragColor = vec4(0.0,1.0,0.0,1.0);
+                gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);
+            });
 
 
 
@@ -251,8 +286,8 @@ void printHelp(int argc, char *argv[]) {
 
     printf("Usage, %s [-t texture] [-s shader_base] modelname.*\n",argv[0]);
 
-    printf("     -t   Texture to force load when loading a mdl file");
-    printf("     -s   shaderfile will load shaderfile.vert & shaderfile.frag");
+    printf("     -t   Texture to force load when loading a mdl file \n");
+    printf("     -s   shaderfile will load and compile shaderfile.vert & shaderfile.frag\n");
     printf("     -h   This helptext\n");
 
 }
@@ -282,10 +317,10 @@ int main(int argc, char* argv[])
    }
 
    glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
-   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
-   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2); // We want OpenGL 2.1 ??
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
-   //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL
+   //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // If we don't want the old OpenGL
    //glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
 
@@ -315,7 +350,7 @@ int main(int argc, char* argv[])
 
    glewExperimental=true; // Needed in core profile
    if (glewInit() != GLEW_OK) {
-       std::cout << "System::init() , Failed to initiate glew";
+       std::cout << "System::init() , Failed to initiate glew" << std::endl;
        //TRACE("Failed to initiate glew");
    }
 
@@ -344,8 +379,6 @@ int main(int argc, char* argv[])
    sprintf(vertex_shader,"%s.vert",shader_base);
    sprintf(fragment_shader,"%s.frag",shader_base);
    sprintf(geometry_shader,"%s.geom",shader_base);
-
-
 
 
    // Set the required callback functions
@@ -414,6 +447,13 @@ int main(int argc, char* argv[])
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
+   shader.Use();
+   // This binds the attrib opengl 2.1 stuff
+   glBindAttribLocation (shader.Program, 0, "position");
+   glBindAttribLocation (shader.Program, 1, "normal");
+   glBindAttribLocation (shader.Program, 2, "vtex");
+
+
 while (!glfwWindowShouldClose(window)) {
 
     // Set frame time
@@ -432,6 +472,7 @@ while (!glfwWindowShouldClose(window)) {
       glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
 
       shader.Use();
+
 
 
       // Check and call events
@@ -464,8 +505,6 @@ while (!glfwWindowShouldClose(window)) {
      //glm::mat4 view = camera.GetViewMatrix();
      //glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
      //glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-
-
 
 
       glm::mat4 model;

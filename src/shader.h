@@ -61,7 +61,7 @@ public:
             }
             else
             {
-                std::cout << "No shader found, using default" << std::endl;
+                std::cout << "No shader file found, using default" << std::endl;
                 vertexCode=std::string(vs,strlen(vs));
                 fragmentCode=std::string(fs,strlen(fs));
             }

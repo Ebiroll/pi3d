@@ -4,14 +4,15 @@ pi3d is an openGL/GLES viewer. The goal of this project is to make it possible t
 
 It uses
 
-assview is included as a submodule. Try
-    git submodule init
-    git submodule update 
+assview and glm included as a submodules. Try
+	git submodule init
+	git submodule update 
     
+Here are some links
 
 glm,
 Get glm, necessary to build the pi3d viewer. Headers only library.
-https://www.opengl.org/sdk/libs/GLM/ Dowmload and put in glm sub-directory
+https://www.opengl.org/sdk/libs/GLM/ 
 
 glfw,
 http://www.glfw.org
@@ -19,3 +20,13 @@ http://www.glfw.org
 glew,
 This does not support GLES. This dependeny will be removed.
 
+On archlinux you install the dependecies with
+	pacman -S glfw
+	pacman -Ss glew
+
+To build
+	mkdir build
+	cd build
+	cmake ..
+	#To run
+	pi3d ../test/tri_cube.blend

@@ -18,26 +18,27 @@ SET (CMAKE_BUILD_TYPE Debug)
 
 IF(WIN32)
 ELSE(WIN32)
-set(CMAKE_CXX_FLAGS " -pthread")
+set(CMAKE_CXX_FLAGS "-std=c++11 -pthread")
 #LINK_FLAGS
-#  -pthread -std=c++11
-set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined -pthread")
+#  -pthread 
+set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined -pthread -lm")
 ENDIF(WIN32)
-
 
 
 
 INCLUDE_DIRECTORIES(
   glew/include
+  assimp/include
+  glm
+  soil
 )
-
 
 
 INCLUDE_DIRECTORIES(
 src
 )
 
-ADD_LIBRARY(SOIL
+SET(SOIL_SRC
 soil/image_DXT.c
 soil/SOIL.h
 soil/image_DXT.h
@@ -51,6 +52,7 @@ soil/stb_image_aug.h
 )
 
 ADD_EXECUTABLE(pi3d
+${SOIL_SRC}
 src/Mesh.cpp  
 src/main.cpp
 src/Mesh.h  
@@ -62,7 +64,18 @@ src/normal.geom
 src/shader.h
 )
 
+add_subdirectory(assimp)
 
-TARGET_LINK_LIBRARIES(pi3d  GLEW  glfw3 X11 Xext) 
+
+
+IF(WIN32)
+TARGET_LINK_LIBRARIES(pi3d opengl32 glfw X11 Xext) 
+ELSE(WIN32)
+TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw GLEW X11 Xext) 
+ENDIF(WIN32)
+
+
+
+
 
 
