@@ -13,10 +13,12 @@
 // GL includes
 #include "shader.h"
 #include "camera.h"
-////////////////// Default shaders ///////////
-// Nice 2.2 tutorial
+// Nice tutorials
 // http://duriansoftware.com/joe/An-intro-to-modern-OpenGL.-Chapter-2.2:-Shaders.html
+//
+// http://blog.db-in.com/all-about-opengl-es-2-x-part-1/
 
+////////////////// Default shaders ///////////
 
 #define GLSL(src) "#version 120\n" #src
 
@@ -89,13 +91,10 @@ const char* fs = GLSL(
 
             void main()
             {
-	        gl_FragColor = texture2D(tex, texcoord);
+                gl_FragColor = texture2D(tex, texcoord);
                 //gl_FragColor = vec4(0.0,1.0,0.0,1.0);
                 //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);
             });
-
-
-
 
 /////////////////////////////////////////////
 #pragma pack(1)
@@ -116,12 +115,11 @@ typedef struct Vector3
 #pragma pack(2)
 typedef struct lod1
 {
-   Vector3_f _abb[2];
-   //uint16_t  nlods;
-   uint16_t  lod[4];
-   uint32_t  render_type;
-   uint32_t  texture_hash;
-   //uint32_t  buffer_size;
+    Vector3_f _abb[2];
+    uint16_t  lod[4];
+    char      name[32];
+    uint32_t  render_hash;
+    uint32_t  texture_hash;
 } mdl_lod1Header_t;
 
 
@@ -158,6 +156,7 @@ GLfloat angleY=0.0;
 bool rotating=true;
 
 
+// Custom format (mdl file)
 void loadSimple(char *filename)
 {
 
@@ -186,8 +185,6 @@ void loadSimple(char *filename)
     fclose(file);
     file=fopen(filename, "rb");
 
-    printf("Render type %d\n",test_header->render_type);
-
 
     // printf("Heder size= %d",sizeof(mdl_lod1Header_t));
 
@@ -196,11 +193,6 @@ void loadSimple(char *filename)
 
     mdl_lod1Header_t header;
     fread(&header,sizeof(mdl_lod1Header_t),1,file);
-
-    if (header.render_type!=1) {
-        printf("Only RT_SIMPLE is supported\n");
-        exit(-1);
-    }
 
     //if (header.nlods!=1) {
     //    printf("Only nlods ==1 supported\n");
@@ -219,7 +211,6 @@ void loadSimple(char *filename)
 
     Camera ca(glm::vec3(0.0f,0.0f,80.0f));
     camera=ca;
-
 
 
     // Part of header
@@ -260,11 +251,6 @@ void loadSimple(char *filename)
 
     fseek(file,pos + buffer_size,SEEK_SET);
     //s->seek(s->offset() + buffer_size);
-
-
-//    layout (location = 0) in vec3 position;
-//    layout (location = 1) in vec3 normal;
-//   layout (location = 2) in vec2 texCoords;
 
 
 
@@ -317,8 +303,8 @@ int main(int argc, char* argv[])
    }
 
    glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
-   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 2.1 ??
-   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2); // We want OpenGL 2.1 ??
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // If we don't want the old OpenGL
    //glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
@@ -350,7 +336,7 @@ int main(int argc, char* argv[])
 
    //glewExperimental=true; // Needed in core profile
    if (glewInit() != GLEW_OK) {
-       std::cout << "System::init() , Failed to initiate glew" << std::endl;
+       std::cout << "System::init() , Failed to initiate glew, check GLFW_CONTEXT_VERSION_MAJOR & MINOR in main.cpp" << std::endl;
        exit(0);
        //TRACE("Failed to initiate glew");
    }

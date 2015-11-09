@@ -52,11 +52,13 @@ GLint TextureFromFile(const char* path, string directory, bool gamma)
 std::vector<Texture> Mesh::MeshEntry::loadMaterialTextures(aiMaterial* mat, aiTextureType type, string typeName)
 {
     vector<Texture> textures;
+    GLboolean skip = false;
+
     for(GLuint i = 0; i < mat->GetTextureCount(type); i++)
     {
         aiString str;
         mat->GetTexture(type, i, &str);
-        GLboolean skip = false;
+        skip = false;
         for(GLuint j = 0; j < textures_loaded.size(); j++)
         {
             if(textures_loaded[j].path == str)
@@ -70,6 +72,7 @@ std::vector<Texture> Mesh::MeshEntry::loadMaterialTextures(aiMaterial* mat, aiTe
         {   // If texture hasn't been loaded already, load it
             Texture texture;
             texture.id = TextureFromFile(str.C_Str(),".",false);
+            printf("Loaded %s\n",str.C_Str());
             texture.type = typeName;
             texture.path = str;
             textures.push_back(texture);
@@ -242,12 +245,12 @@ Mesh::MeshEntry::~MeshEntry() {
 void Mesh::MeshEntry::render(GLuint prog) {
 
 
-       if (textures_loaded.size()>0) {
-	 printf("%d",textures_loaded[0].id);
-	  glActiveTexture(GL_TEXTURE0);
-          glBindTexture(GL_TEXTURE_2D, textures_loaded[0].id);
-          glUniform1i(glGetUniformLocation(prog, "tex"), 0);	   
-       }
+    if (textures_loaded.size()>0) {
+       //printf("%d",textures_loaded[0].id);
+       glActiveTexture(GL_TEXTURE0);
+       glBindTexture(GL_TEXTURE_2D, textures_loaded[0].id);
+       glUniform1i(glGetUniformLocation(prog, "tex"), 0);
+    }
        
 	glBindVertexArray(vao);
 	glDrawElements(GL_TRIANGLES, elementCount, GL_UNSIGNED_INT, NULL);
@@ -260,7 +263,7 @@ void Mesh::MeshEntry::render(GLuint prog) {
 Mesh::Mesh(const char *filename)
 {
 	Assimp::Importer importer;
-	const aiScene *scene = importer.ReadFile(filename, NULL);
+    const aiScene *scene = importer.ReadFile(filename, aiProcess_Triangulate );
 	if(!scene) {
 		printf("Unable to load mesh: %s\n", importer.GetErrorString());
                 exit(-1);

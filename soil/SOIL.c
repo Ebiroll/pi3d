@@ -13,7 +13,7 @@
 	* everybody at gamedev.net
 */
 
-#define SOIL_CHECK_FOR_GL_ERRORS 0
+#define SOIL_CHECK_FOR_GL_ERRORS 1
 
 #ifdef WIN32
 	#define WIN32_LEAN_AND_MEAN
