@@ -98,6 +98,18 @@ const char* fs = GLSL(
 
 /////////////////////////////////////////////
 #pragma pack(1)
+struct PKG_content
+{
+	uint32_t n_files;
+	struct Entry
+	{
+		char file[32];
+		uint32_t size;
+		uint32_t offset;
+	} files[1];
+};
+
+
 typedef struct Vertex
 {
         float pos[3];
