@@ -28,6 +28,7 @@ ENDIF(WIN32)
 
 INCLUDE_DIRECTORIES(
   glew/include
+  glfw/include
   assimp/include
   glm
   soil
@@ -55,6 +56,7 @@ ADD_EXECUTABLE(pi3d
 ${SOIL_SRC}
 src/Mesh.cpp  
 src/main.cpp
+src/pkg.cpp
 src/Mesh.h  
 src/shader.frag
 src/shader.vert
@@ -65,13 +67,16 @@ src/shader.h
 )
 
 add_subdirectory(assimp)
+add_subdirectory(glfw)
+add_subdirectory(glew)
 
 
 
 IF(WIN32)
 TARGET_LINK_LIBRARIES(pi3d opengl32 glfw X11 Xext) 
 ELSE(WIN32)
-TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw GLEW X11 Xext) 
+#TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw GLEW X11 Xext) 
+TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw /home/olof/work/pi3d/glew/lib/libGLEW.a  X11 Xext) 
 ENDIF(WIN32)
 
 
