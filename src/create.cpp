@@ -110,7 +110,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void Do_Movement();
 
 // Camera
-Camera camera(glm::vec3(0.0f, 0.0f, 80.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 20.0f));
 
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
@@ -135,16 +135,15 @@ bool rotating=true;
 
 
 float vertices[] = {
-     -10.0f,  -10.0f, 10.0f , // Vertex 1 (X, Y, Z)
-     10.0f, -10.0f, 0.0f , // Vertex 2 (X, Y, Z)
-     10.0f, 10.0f, 0.0f,   // Vertex 3 (X, Y ,Z)
-     0.0f,  0.0f, 0.0f,  // Vertex 4 (X, Y, Z)
-     1.0f, -1.0f, 0.0f , // Vertex 5 (X, Y, Z)
-     1.0f, -1.0f, 1.0f  // Vertex 6 (X, Y, Z)
+     -10.0f,  -10.0f, 0.0f , // Vertex 0 (X, Y, Z)
+     10.0f, -10.0f, 0.0f , // Vertex 1 (X, Y, Z)
+     10.0f, 10.0f, 0.0f,   // Vertex 2 (X, Y ,Z)
+     -10.0f,  10.0f, 0.0f , // Vertex 3 (X, Y, Z)
+     -10.0f, -10.0f, 0.0f   // Vertex 4 (X, Y ,Z)
 
 };
 
-unsigned short indexes[] = {1,2,3,3,4,5};
+GLushort  indexes[] = {0,1,2,2,3,4};
 
 
 void printHelp(int argc, char *argv[]) {
@@ -267,9 +266,7 @@ int main(int argc, char* argv[])
    //Shader shader("shader.vert", "shader.frag");
 
    Mesh *mesh=NULL;
- #if 0
-   // Something wrong here, use cube instead. :-P
-   ../test/cube.blend
+
    // Use square flat area as mesh
 
    glGenVertexArrays(1, &VAO);
@@ -286,12 +283,16 @@ int main(int argc, char* argv[])
    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexes), &indexes[0], GL_STATIC_DRAW);
    mdl_index_count=6;
 
-   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), 0);
 
+   glEnableVertexAttribArray(0);
+   //glEnableVertexAttribArray(1);
+   //glEnableVertexAttribArray(2);
+   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), 0);
+   //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (char*)0 + 12);
+   //glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (char*)0 + 24);
 
    glBindVertexArray(0);
 
-#endif
 
 
    Camera ca(glm::vec3(0.0f,0.0f,10.0f));
@@ -302,7 +303,7 @@ int main(int argc, char* argv[])
 
    char *pExt = strrchr(argv[argc-1], '.');
 
-
+#if 0
    if (pExt != NULL)
    {
       if (strcmp(pExt,".mdl")==0)
@@ -316,11 +317,11 @@ int main(int argc, char* argv[])
    }
    else
    {
-          printf("Please specify model to load \n");
-          exit(1);
+          //printf("Please specify model to load \n");
+          //exit(1);
 
    }
-
+#endif
 
 
    //if (mesh)
@@ -345,14 +346,13 @@ int main(int argc, char* argv[])
    shader.Use();
    // This binds the attrib opengl 2.1 stuff
    glBindAttribLocation (shader.Program, 0, "position");
-   glBindAttribLocation (shader.Program, 1, "normal");
-   glBindAttribLocation (shader.Program, 2, "vtex");
+   //glBindAttribLocation (shader.Program, 1, "normal");
+   //glBindAttribLocation (shader.Program, 2, "vtex");
 
- //iResolution
    glm::vec3 resolution((float)screenWidth,(float)screenHeigth,0.0f);
 
 
-   /////////////////////////// Cloud shader,
+   /////////////////////////// Cloud shader
    //uniform vec3 fogColor;
    //uniform float fogNear;
    //uniform float fogFar;
@@ -387,9 +387,10 @@ while (!glfwWindowShouldClose(window)) {
       fogFar=fogFar+0.1f;
       glUniform1f(fogFarLoc,fogFar);
 
+      fogColor.g=fogColor.g+0.01;
 
       // Clear the colorbuffer
-      glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
+      glClearColor(0.35f, 0.35f, 0.35f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
@@ -412,7 +413,7 @@ while (!glfwWindowShouldClose(window)) {
       //view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
       //projection = glm::perspective(45.0f, (GLfloat)screenWidth / (GLfloat)screenHeigth, 0.1f, 100.0f);
       // Get their uniform location
-      projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeigth, 0.1f, 50.0f);
+      projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeigth, 0.4f, 50.0f);
       view = camera.GetViewMatrix();
 
       GLint modelLoc = glGetUniformLocation(shader.Program, "model");
