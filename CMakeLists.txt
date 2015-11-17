@@ -66,6 +66,22 @@ src/normal.geom
 src/shader.h
 )
 
+
+ADD_EXECUTABLE(create
+${SOIL_SRC}
+src/Mesh.cpp
+src/create.cpp
+src/pkg.cpp
+src/Mesh.h
+src/shader.frag
+src/shader.vert
+src/normal.frag
+src/normal.vert
+src/normal.geom
+src/shader.h
+)
+
+
 add_subdirectory(assimp)
 add_subdirectory(glfw)
 add_subdirectory(glew)
@@ -77,6 +93,8 @@ TARGET_LINK_LIBRARIES(pi3d opengl32 glfw X11 Xext)
 ELSE(WIN32)
 #TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw GLEW X11 Xext) 
 TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw /home/olof/work/pi3d/glew/lib/libGLEW.a  X11 Xext) 
+TARGET_LINK_LIBRARIES(create assimp m GL glfw /home/olof/work/pi3d/glew/lib/libGLEW.a  X11 Xext)
+
 ENDIF(WIN32)
 
 

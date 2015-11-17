@@ -1,7 +1,5 @@
 
 #include "Mesh.h"
-#include "assimp/Importer.hpp"
-#include "assimp/postprocess.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -124,7 +122,7 @@ int screenWidth=1280;
 int screenHeigth=1024;
 
 // Backup texture
-GLuint texture1;
+GLuint texture1=-1;
 GLuint VBO, VAO;
 int mdl_index_count=-1;
 
@@ -136,13 +134,24 @@ bool rotating=true;
 
 
 
+float vertices[] = {
+     -10.0f,  -10.0f, 10.0f , // Vertex 1 (X, Y, Z)
+     10.0f, -10.0f, 0.0f , // Vertex 2 (X, Y, Z)
+     10.0f, 10.0f, 0.0f,   // Vertex 3 (X, Y ,Z)
+     0.0f,  0.0f, 0.0f,  // Vertex 4 (X, Y, Z)
+     1.0f, -1.0f, 0.0f , // Vertex 5 (X, Y, Z)
+     1.0f, -1.0f, 1.0f  // Vertex 6 (X, Y, Z)
+
+};
+
+unsigned short indexes[] = {1,2,3,3,4,5};
 
 
 void printHelp(int argc, char *argv[]) {
 
-    printf("Usage, %s [-t texture] [-s shader_base] modelname.*\n",argv[0]);
+    printf("Usage, %s [-t texture] [-s shader_base] *\n",argv[0]);
 
-    printf("     -t   Texture to force load when loading a mdl file \n");
+    printf("     -t   Texture1 to use \n");
     printf("     -s   shaderfile will load and compile shaderfile.vert & shaderfile.frag\n");
     printf("     -h   This helptext\n");
 
@@ -165,7 +174,7 @@ int main(int argc, char* argv[])
 
   if (argc<2)
   {
-      printHelp(argc,argv);
+      //printHelp(argc,argv);
   }
 
   int ret=glfwInit();
@@ -213,6 +222,7 @@ int main(int argc, char* argv[])
        //TRACE("Failed to initiate glew");
    }
 
+   //shader_base="../shader/creation";
 
    for (int i=1; i< argc; i++) {
      if (!strcmp(argv[i],"-h"))
@@ -230,8 +240,6 @@ int main(int argc, char* argv[])
      {
          texture1=TextureFromFile(argv[i+1],".",false);
      }
-
-
 
    }
 
@@ -258,8 +266,36 @@ int main(int argc, char* argv[])
    Shader shader(vertex_shader, fragment_shader,geometry_shader);
    //Shader shader("shader.vert", "shader.frag");
 
-
    Mesh *mesh=NULL;
+ #if 0
+   // Something wrong here, use cube instead. :-P
+   ../test/cube.blend
+   // Use square flat area as mesh
+
+   glGenVertexArrays(1, &VAO);
+   glBindVertexArray(VAO);
+
+   GLuint vb;
+   glGenBuffers(1, &vb);
+   glBindBuffer(GL_ARRAY_BUFFER, vb);
+   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+   GLuint ib;
+   glGenBuffers(1, &ib);
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexes), &indexes[0], GL_STATIC_DRAW);
+   mdl_index_count=6;
+
+   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), 0);
+
+
+   glBindVertexArray(0);
+
+#endif
+
+
+   Camera ca(glm::vec3(0.0f,0.0f,10.0f));
+   camera=ca;
 
 
    //strcpy(out_filename,filename);
@@ -277,26 +313,24 @@ int main(int argc, char* argv[])
       {
           mesh = new Mesh(argv[argc-1]);
       }
-
    }
    else
    {
-              printf("Please specify model to load \n");
-              exit(1);
+          printf("Please specify model to load \n");
+          exit(1);
 
    }
 
 
 
-   if (mesh)
-   {
-       for(int j=0;j<mesh->textures_loaded.size();j++)
-       {
-           printf("Loaded texture type %s from %s id %d\n",mesh->textures_loaded[j].type.c_str(),mesh->textures_loaded[j].path.data,mesh->textures_loaded[j].id);
-           texture1=mesh->textures_loaded[j].id;
-       }
-   }
-
+   //if (mesh)
+   //{
+   //   for(int j=0;j<mesh->textures_loaded.size();j++)
+   //    {
+   //        printf("Loaded texture type %s from %s id %d\n",mesh->textures_loaded[j].type.c_str(),mesh->textures_loaded[j].path.data,mesh->textures_loaded[j].id);
+   //        texture1=mesh->textures_loaded[j].id;
+   //    }
+   //}
 
 
 
@@ -314,6 +348,34 @@ int main(int argc, char* argv[])
    glBindAttribLocation (shader.Program, 1, "normal");
    glBindAttribLocation (shader.Program, 2, "vtex");
 
+ //iResolution
+   glm::vec3 resolution((float)screenWidth,(float)screenHeigth,0.0f);
+
+
+   /////////////////////////// Cloud shader,
+   //uniform vec3 fogColor;
+   //uniform float fogNear;
+   //uniform float fogFar;
+   //uniform float opacity;
+
+   glm::vec3  fogColor(1.0f,0.0f,0.5f);
+   float fogNear=0.1f;
+   float fogFar=0.8f;
+   float opacity=0.9f;
+
+   GLint fogColorLoc = glGetUniformLocation(shader.Program, "fogColor");
+   glUniform3f(fogColorLoc,fogColor.x,fogColor.y,fogColor.z);
+
+   GLint fogNearLoc = glGetUniformLocation(shader.Program, "fogNear");
+   glUniform1f(fogNearLoc,fogNear);
+
+   GLint fogFarLoc = glGetUniformLocation(shader.Program, "fogFar");
+   glUniform1f(fogFarLoc,fogFar);
+
+   GLint opacityLoc = glGetUniformLocation(shader.Program, "opacity");
+   glUniform1f(opacityLoc,opacity);
+   ////////////////////////////////////////////////////
+
 
 while (!glfwWindowShouldClose(window)) {
 
@@ -322,8 +384,12 @@ while (!glfwWindowShouldClose(window)) {
       deltaTime = currentFrame - lastFrame;
       lastFrame = currentFrame;
 
+      fogFar=fogFar+0.1f;
+      glUniform1f(fogFarLoc,fogFar);
+
+
       // Clear the colorbuffer
-      glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+      glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
@@ -333,7 +399,6 @@ while (!glfwWindowShouldClose(window)) {
       glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
 
       shader.Use();
-
 
 
       // Check and call events
@@ -347,14 +412,13 @@ while (!glfwWindowShouldClose(window)) {
       //view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
       //projection = glm::perspective(45.0f, (GLfloat)screenWidth / (GLfloat)screenHeigth, 0.1f, 100.0f);
       // Get their uniform location
-      projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeigth, 0.1f, 100.0f);
+      projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeigth, 0.1f, 50.0f);
       view = camera.GetViewMatrix();
 
       GLint modelLoc = glGetUniformLocation(shader.Program, "model");
       GLint viewLoc = glGetUniformLocation(shader.Program, "view");
       GLint projLoc = glGetUniformLocation(shader.Program, "projection");
       GLint mvpLoc = glGetUniformLocation(shader.Program, "mvp");
-
 
 
       glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
@@ -387,13 +451,21 @@ while (!glfwWindowShouldClose(window)) {
       glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
 
 
+      GLint resLoc = glGetUniformLocation(shader.Program, "iResolution");
+      glUniform3f(resLoc,resolution.x,resolution.y,resolution.z);
+
+
+      GLint timeLoc = glGetUniformLocation(shader.Program, "time");
+      glUniform1f(timeLoc,currentFrame);
 
       if (mdl_index_count>0)
       {
           // Draw mdl :-P
-          //glBindMultiTextureEXT(GL_TEXTURE0, GL_TEXTURE_2D, texture1);
-          //glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
-
+          if(texture1>0) {
+              glActiveTexture(GL_TEXTURE0);
+              glBindTexture(GL_TEXTURE0, texture1);
+              glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
+          }
 
           glBindVertexArray(VAO);
           glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
