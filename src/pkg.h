@@ -1,6 +1,12 @@
 #ifndef PKG_H
 #define PKG_H
+#include "camera.h"
 
+// Loads mdl file
+void loadSimple(char *filename,Camera &camera);
+
+// Loads pkg file
+void loadPkg(char *filename,Camera &camera);
 
 
 /////////////////////////////////////////////

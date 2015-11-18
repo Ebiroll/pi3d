@@ -13,6 +13,82 @@ extern GLuint VBO, VAO;
 extern int mdl_index_count;
 
 
+
+// Loads pkg file
+void loadPkg(char *filename,Camera &camera)
+{
+
+
+}
+
+
+// Custom format (mdl file)
+void loadMdl(unsigned char*read_pos,unsigned int length)
+{
+  mdl_lod1Header_t *header=(mdl_lod1Header_t *)read_pos;
+
+  //}
+
+  printf("X  %.2f - %.2f\n",header->_abb[0].x,header->_abb[1].x);
+  printf("Y  %.2f - %.2f\n",header->_abb[0].y,header->_abb[1].y);
+  printf("Z  %.2f - %.2f\n",header->_abb[0].z,header->_abb[1].z);
+  glGenVertexArrays(1, &VAO);
+  glBindVertexArray(VAO);
+
+  read_pos+=sizeof(mdl_lod1Header_t);
+
+  uint32_t buffer_size;
+  buffer_size=*(uint32_t *)read_pos;
+  //fread(&buffer_size, 4,1,file);
+
+
+  printf("buffer size/sizeof(pixel_data) %d\n",buffer_size/sizeof(Vertex_t));
+
+  //int pos=ftell(file);
+  read_pos+=4;
+
+  GLuint vb;
+  glGenBuffers(1, &vb);
+  glBindBuffer(GL_ARRAY_BUFFER, vb);
+  glBufferData(GL_ARRAY_BUFFER, buffer_size, read_pos, GL_STATIC_DRAW);
+
+  //fseek(file,pos + buffer_size,SEEK_SET);
+  //fread(&buffer_size, 4,1,file);
+  read_pos+=buffer_size;
+
+  buffer_size=*(uint32_t *)read_pos;
+
+  mdl_index_count = buffer_size/2 ;
+
+  printf("index count %d\n",mdl_index_count);
+
+  //pos=ftell(file);
+
+  GLuint ib;
+  glGenBuffers(1, &ib);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer_size,  read_pos, GL_STATIC_DRAW);
+
+  //fseek(file,pos + buffer_size,SEEK_SET);
+  //s->seek(s->offset() + buffer_size);
+
+
+
+  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(1);
+  glEnableVertexAttribArray(2);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (char*)0 + 12);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (char*)0 + 24);
+
+  glBindVertexArray(0);
+
+
+
+}
+
+
+
 // Custom format (mdl file)
 void loadSimple(char *filename,Camera &camera)
 {
@@ -35,6 +111,10 @@ void loadSimple(char *filename,Camera &camera)
     data.resize(size);
     fread(&data[0], size, 1, file);
     mdl_lod1Header_t *test_header=(mdl_lod1Header_t *)&data[0];
+
+
+    //loadMdl(&data[0],size);
+
 
     // This only works when nlod=1!!
     //assert(test_header->nlods==1);
@@ -110,7 +190,6 @@ void loadSimple(char *filename,Camera &camera)
     //s->seek(s->offset() + buffer_size);
 
 
-
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
@@ -119,7 +198,6 @@ void loadSimple(char *filename,Camera &camera)
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (char*)0 + 24);
 
     glBindVertexArray(0);
-
 
 }
 

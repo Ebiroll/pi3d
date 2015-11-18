@@ -143,7 +143,7 @@ float vertices[] = {
 
 };
 
-GLushort  indexes[] = {0,1,2,2,3,4};
+GLushort  indexes[] = {0,1,2,2,3,0};
 
 
 void printHelp(int argc, char *argv[]) {

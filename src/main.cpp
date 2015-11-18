@@ -86,7 +86,7 @@ const char* vs = GLSL(
         void main()
         {
             gl_Position = projection * view * model * vec4(position, 1.0);
-            //texcoord = vec2(position.x , position.y)  + vec2(0.5);
+            //texcoord = vec2(vtex.x , vtex.y)  + vec2(0.5);
             texcoord  =  vtex;
         });
 
@@ -133,8 +133,6 @@ GLfloat angleX=0.0;
 GLfloat angleY=0.0;
 
 bool rotating=true;
-
-
 
 
 
@@ -310,9 +308,9 @@ int main(int argc, char* argv[])
 
    shader.Use();
    // This binds the attrib opengl 2.1 stuff
-   glBindAttribLocation (shader.Program, 0, "position");
-   glBindAttribLocation (shader.Program, 1, "normal");
-   glBindAttribLocation (shader.Program, 2, "vtex");
+   //glBindAttribLocation (shader.Program, 0, "position");
+   //glBindAttribLocation (shader.Program, 1, "normal");
+   //glBindAttribLocation (shader.Program, 2, "vtex");
 
 
 while (!glfwWindowShouldClose(window)) {
@@ -393,7 +391,9 @@ while (!glfwWindowShouldClose(window)) {
           // Draw mdl :-P
           //glBindMultiTextureEXT(GL_TEXTURE0, GL_TEXTURE_2D, texture1);
           //glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
-
+          glActiveTexture(GL_TEXTURE0);
+          glBindTexture(GL_TEXTURE_2D, texture1);
+          glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
 
           glBindVertexArray(VAO);
           glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
