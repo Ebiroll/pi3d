@@ -87,7 +87,8 @@ const char* vs = GLSL(
         {
             gl_Position = projection * view * model * vec4(position, 1.0);
             //texcoord = vec2(vtex.x , vtex.y)  + vec2(0.5);
-            texcoord  =  vtex;
+            //texcoord  =  vtex;
+            texcoord = vec2(vtex.x, 1.0 - vtex.y);
         });
 
 const char* fs = GLSL(
@@ -229,9 +230,9 @@ int main(int argc, char* argv[])
          texture1=TextureFromFile(argv[i+1],".",false);
      }
 
-
-
    }
+
+
 
    sprintf(vertex_shader,"%s.vert",shader_base);
    sprintf(fragment_shader,"%s.frag",shader_base);
@@ -270,6 +271,8 @@ int main(int argc, char* argv[])
       if (strcmp(pExt,".mdl")==0)
       {
           loadSimple(argv[argc-1],camera);
+      } else if (strcmp(pExt,".pkg")==0) {
+          loadPkg(argv[argc-1],camera);
       }
       else
       {
@@ -393,7 +396,7 @@ while (!glfwWindowShouldClose(window)) {
           //glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
           glActiveTexture(GL_TEXTURE0);
           glBindTexture(GL_TEXTURE_2D, texture1);
-          glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
+          glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);  // Texture unit 0 is for base images.
 
           glBindVertexArray(VAO);
           glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);

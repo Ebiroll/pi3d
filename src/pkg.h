@@ -6,7 +6,7 @@
 void loadSimple(char *filename,Camera &camera);
 
 // Loads pkg file
-void loadPkg(char *filename,Camera &camera);
+int loadPkg(char *filename,Camera &camera);
 
 
 /////////////////////////////////////////////
