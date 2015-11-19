@@ -24,7 +24,7 @@
 //
 
 ////////////////// Default shaders ///////////
-
+#if 0
 #define GLSL(src) "#version 120\n" #src
 
 /*
@@ -102,7 +102,7 @@ const char* fs = GLSL(
                 //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);
             });
 
-
+#endif
 glm::vec3 center(0.0f, 0.0f, 0.0f);
 
 
@@ -121,8 +121,8 @@ bool firstMouse = true;
 
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
-int screenWidth=1280;
-int screenHeigth=1024;
+int screenWidth=800;
+int screenHeigth=600;
 
 // Backup texture
 GLuint texture1;
@@ -173,9 +173,9 @@ int main(int argc, char* argv[])
       std::cerr << "Init failed"  << ret << std::endl;
    }
 
-   glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
-   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2); // We want OpenGL 2.1 ??
-   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+   //glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
+   //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2); // We want OpenGL 2.1 ??
+   //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // If we don't want the old OpenGL
    //glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);

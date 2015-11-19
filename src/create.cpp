@@ -21,83 +21,6 @@
 // http://www.shaderific.com/glsl-functions/
 //
 
-////////////////// Default shaders ///////////
-
-#define GLSL(src) "#version 120\n" #src
-
-/*
- *
-
-   layout(location = 0) in vec3 vpos;
-   layout(location = 1) in vec3 vnorm;
-   layout(location = 2) in vec2 vtex;
-
-    uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 projection;
-
-    void main()
-    {
-        gl_Position = projection * view * model * vec4(vpos, 1.0f);
-    }
-
-
-#version 130
-layout(location = 0) in vec3 vertexPosition_modelspace;
-
-// Setup Vertex Attributes  [NEW]
-glBindAttribLocation (ProgramID, 0, "vertexPosition_modelspace");
-
-//////////////////////////////////////
-
-    layout(std140, column_major) uniform;
-
-    in vec2 uv;
-    in vec3 norm;
-    uniform sampler2D tex;
-    uniform float light;
-    out vec4 frag_color;
-
-    void main() {
-        vec4 color = texture(tex, uv);
-        vec3 l = vec3(1, 1, 0.7) * 1.0 * (1.0 - color.a);
-        frag_color = vec4(clamp(color.rgb + l, 0, 1), 1.0);
-        //frag_color = textureLod(tex, uv, 0);
-        //frag_color = vec4(1);
-    }
-
-
-*/
-
-
-const char* vs = GLSL(
-        attribute vec3 position;
-        attribute vec3 normal;
-        attribute vec2 vtex;
-
-        uniform mat4 model;
-        uniform mat4 view;
-        uniform mat4 projection;
-
-        varying vec2 texcoord;
-
-        void main()
-        {
-            gl_Position = projection * view * model * vec4(position, 1.0);
-            //texcoord = vec2(position.x , position.y)  + vec2(0.5);
-            texcoord  =  vtex;
-        });
-
-const char* fs = GLSL(
-            varying vec2 texcoord;
-            uniform sampler2D tex;
-
-            void main()
-            {
-                gl_FragColor = texture2D(tex, texcoord);
-                //gl_FragColor = vec4(0.0,1.0,0.0,1.0);
-                //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);
-            });
 
 
 glm::vec3 center(0.0f, 0.0f, 0.0f);
@@ -182,16 +105,13 @@ int main(int argc, char* argv[])
       std::cerr << "Init failed"  << ret << std::endl;
    }
 
-   glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
-   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2); // We want OpenGL 2.1 ??
-   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+   //glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
+   //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // We want OpenGL 2.1 ??
+   //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // If we don't want the old OpenGL
    //glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-
-
-   window = glfwCreateWindow(screenWidth, screenHeigth, "Viewer", NULL, NULL);
-
+#define FULL 1
 
 #ifdef FULL
     GLFWmonitor* monitor=glfwGetPrimaryMonitor();
@@ -201,6 +121,8 @@ int main(int argc, char* argv[])
     glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
     window = glfwCreateWindow(mode->width, mode->height, "assviewer 0.1", monitor, NULL);
+#else
+   window = glfwCreateWindow(screenWidth, screenHeigth, "Viewer", NULL, NULL);
 #endif
 
 
