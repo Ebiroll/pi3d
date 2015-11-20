@@ -64,6 +64,7 @@ src/normal.frag
 src/normal.vert
 src/normal.geom
 src/shader.h
+src/shader.cpp
 )
 
 
@@ -79,6 +80,7 @@ src/normal.frag
 src/normal.vert
 src/normal.geom
 src/shader.h
+src/shader.cpp
 )
 
 

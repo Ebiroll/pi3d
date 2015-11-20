@@ -18,8 +18,12 @@ public:
     GLuint      Program;
     // Constructor generates the shader on the fly
     Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLchar* geometryPath = nullptr);
+    void linkProg();
     // Uses the current shader
     void Use() { glUseProgram(this->Program); }
+
+    GLuint vertex, fragment;
+    GLuint geometry;
 
 private:
     void checkCompileErrors(GLuint shader, std::string type)

@@ -6,8 +6,7 @@
 
 #include <GL/glew.h>
 
-#define GLSL(src) "#version 100\n" #src
-
+#define GLSL(src) "#version 120\n" #src
 
 const char* vs = GLSL(
         attribute vec3 position;
@@ -34,7 +33,8 @@ const char* fs = GLSL(
 
             void main()
             {
-                gl_FragColor = texture2D(tex, texcoord);
+                vec4 color = texture2D(tex, texcoord);
+                gl_FragColor = color;
                 //gl_FragColor = vec4(0.0,1.0,0.0,1.0);
                 //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);
             });
@@ -43,6 +43,7 @@ const char* fs = GLSL(
 
 Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLchar* geometryPath)
 {
+    geometry=-1;
     // 1. Retrieve the vertex/fragment source code from filePath
     std::string vertexCode;
     std::string fragmentCode;
@@ -85,7 +86,7 @@ Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLcha
         }
         else
         {
-            std::cout << "No shader file found, using default" << std::endl;
+            std::cout << "No shader file found, using default"  << vertexPath << std::endl;
             vertexCode=std::string(vs,strlen(vs));
             fragmentCode=std::string(fs,strlen(fs));
         }
@@ -98,7 +99,6 @@ Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLcha
     const GLchar* vShaderCode = vertexCode.c_str();
     const GLchar * fShaderCode = fragmentCode.c_str();
     // 2. Compile shaders
-    GLuint vertex, fragment;
     GLint success;
     GLchar infoLog[512];
     // Vertex Shader
@@ -112,7 +112,6 @@ Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLcha
     glCompileShader(fragment);
     checkCompileErrors(fragment, "FRAGMENT");
     // If geometry shader is given, compile geometry shader
-    GLuint geometry;
     if(geometryPath != nullptr)
     {
         const GLchar * gShaderCode = geometryCode.c_str();
@@ -121,18 +120,26 @@ Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLcha
         glCompileShader(geometry);
         checkCompileErrors(geometry, "GEOMETRY");
     }
-    // Shader Program
     this->Program = glCreateProgram();
+    // Shader Program
     glAttachShader(this->Program, vertex);
     glAttachShader(this->Program, fragment);
-    if(geometryPath != nullptr)
+    if(geometry > -1)
         glAttachShader(this->Program, geometry);
+
+}
+
+
+void Shader::linkProg()
+{
     glLinkProgram(this->Program);
     checkCompileErrors(this->Program, "PROGRAM");
     // Delete the shaders as they're linked into our program now and no longer necessery
     glDeleteShader(vertex);
     glDeleteShader(fragment);
-    if(geometryPath != nullptr)
+    if(geometry > -1)
         glDeleteShader(geometry);
 
 }
+
+

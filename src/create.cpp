@@ -106,12 +106,13 @@ int main(int argc, char* argv[])
    }
 
    //glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
-   //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // We want OpenGL 2.1 ??
-   //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2); // We want OpenGL 2.1 ??
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // If we don't want the old OpenGL
    //glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-#define FULL 1
+
+   //#define FULL 1
 
 #ifdef FULL
     GLFWmonitor* monitor=glfwGetPrimaryMonitor();
@@ -270,6 +271,10 @@ int main(int argc, char* argv[])
    glBindAttribLocation (shader.Program, 0, "position");
    //glBindAttribLocation (shader.Program, 1, "normal");
    //glBindAttribLocation (shader.Program, 2, "vtex");
+
+
+   shader.linkProg();
+
 
    glm::vec3 resolution((float)screenWidth,(float)screenHeigth,0.0f);
 

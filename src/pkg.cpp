@@ -180,10 +180,10 @@ int loadPkg(char *filename,Camera &camera)
    int numF=my_content->n_files;
    for (int ix=0;ix<numF;ix++)
    {
-       printf("%s\n",my_content->files[ix].file);
-       printf("off=%d\n",my_content->files[ix].offset);
-       printf("siz=%d\n",my_content->files[ix].size);
-       printf("nxt=%d\n",my_content->files[ix].offset + my_content->files[ix].size);
+       //printf("%s\n",my_content->files[ix].file);
+       //printf("off=%d\n",my_content->files[ix].offset);
+       //printf("siz=%d\n",my_content->files[ix].size);
+       //printf("nxt=%d\n",my_content->files[ix].offset + my_content->files[ix].size);
 
        char *pExt = strrchr(my_content->files[ix].file, '.');
        if (pExt != NULL)

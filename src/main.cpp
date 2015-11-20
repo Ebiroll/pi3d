@@ -213,30 +213,8 @@ int main(int argc, char* argv[])
    }
 
 
-   for (int i=1; i< argc; i++) {
-     if (!strcmp(argv[i],"-h"))
-     {
-         printHelp(argc,argv);
-         exit(1);
-     }
-
-     if (!strcmp(argv[i],"-s"))
-     {
-        shader_base=argv[i+1];
-     }
-
-     if (!strcmp(argv[i],"-t"))
-     {
-         texture1=TextureFromFile(argv[i+1],".",false);
-     }
-
-   }
 
 
-
-   sprintf(vertex_shader,"%s.vert",shader_base);
-   sprintf(fragment_shader,"%s.frag",shader_base);
-   sprintf(geometry_shader,"%s.geom",shader_base);
 
 
    // Set the required callback functions
@@ -253,13 +231,46 @@ int main(int argc, char* argv[])
 
    glEnable(GL_TEXTURE_2D);
 
+
+   for (int i=1; i< argc; i++) {
+     if (!strcmp(argv[i],"-h"))
+     {
+         printHelp(argc,argv);
+         exit(1);
+     }
+
+     if (!strcmp(argv[i],"-s"))
+     {
+        printf("SHAD %s\n",argv[i+1]);
+        shader_base=argv[i+1];
+     }
+
+     if (!strcmp(argv[i],"-t"))
+     {
+         texture1=TextureFromFile(argv[i+1],".",false);
+     }
+
+   }
+
+   sprintf(vertex_shader,"%s.vert",shader_base);
+   sprintf(fragment_shader,"%s.frag",shader_base);
+   sprintf(geometry_shader,"%s.geom",shader_base);
+
+
+
    // Setup and compile our shaders
    Shader shader(vertex_shader, fragment_shader,geometry_shader);
    //Shader shader("shader.vert", "shader.frag");
 
 
-   Mesh *mesh=NULL;
+   // This binds the attrib opengl 2.1 stuff
+   glBindAttribLocation (shader.Program, 0, "position");
+   glBindAttribLocation (shader.Program, 1, "normal");
+   glBindAttribLocation (shader.Program, 2, "vtex");
+   glBindAttribLocation (shader.Program, 3, "index");
 
+
+   Mesh *mesh=NULL;
 
    //strcpy(out_filename,filename);
 
@@ -309,11 +320,10 @@ int main(int argc, char* argv[])
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
+
+
+   shader.linkProg();
    shader.Use();
-   // This binds the attrib opengl 2.1 stuff
-   //glBindAttribLocation (shader.Program, 0, "position");
-   //glBindAttribLocation (shader.Program, 1, "normal");
-   //glBindAttribLocation (shader.Program, 2, "vtex");
 
 
 while (!glfwWindowShouldClose(window)) {
