@@ -25,7 +25,6 @@
 
 ////////////////// Default shaders ///////////
 #if 0
-#define GLSL(src) "#version 120\n" #src
 
 /*
  *
@@ -70,6 +69,8 @@ glBindAttribLocation (ProgramID, 0, "vertexPosition_modelspace");
 
 
 */
+#endif
+#define GLSL(src) "#version 120\n" #src
 
 
 const char* vs = GLSL(
@@ -102,7 +103,6 @@ const char* fs = GLSL(
                 //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);
             });
 
-#endif
 glm::vec3 center(0.0f, 0.0f, 0.0f);
 
 

@@ -122,6 +122,7 @@ reshape(int width, int height)
 static void
 create_shaders(void)
 {
+#if 0 
    static const char *fragShaderText =
       "varying vec4 v_color;\n"
       "void main() {\n"
@@ -136,7 +137,22 @@ create_shaders(void)
       "   gl_Position = modelviewProjection * pos;\n"
       "   v_color = color;\n"
       "}\n";
-
+#endif
+   
+   static const char *fragShaderText =
+      "void main() {\n"
+      "   gl_FragColor = vec4(1.0,1.0,0.0,1.0);\n"
+      "}\n";
+   static const char *vertShaderText =
+      "uniform mat4 modelviewProjection;\n"
+      "attribute vec4 pos;\n"
+      "attribute vec4 color;\n"
+      "varying vec4 v_color;\n"
+      "void main() {\n"
+      "   gl_Position = modelviewProjection * pos;\n"
+      "   v_color = color;\n"
+      "}\n";
+   
    GLuint fragShader, vertShader, program;
    GLint stat;
 

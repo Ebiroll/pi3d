@@ -230,6 +230,11 @@ void oglinit(STATE_T * state)
 	//	return -1;
 	//}
 
+
+    result = eglSurfaceAttrib(state->display, state->surface, EGL_SWAP_BEHAVIOR, EGL_BUFFER_PRESERVED);
+    assert(EGL_FALSE != result);
+
+
 	// connect the context to the surface
 	result = eglMakeCurrent(state->display, state->surface, state->surface, state->context);
 

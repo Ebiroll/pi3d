@@ -8,8 +8,6 @@ SET (CMAKE_BUILD_TYPE Debug)
 include(CheckIncludeFile)
 CHECK_INCLUDE_FILE(/opt/vc/include/bcm_host.h BCMHOST)
 
-# Test GLES
-add_definitions(-DHAVEGLES -DHAVEGLES)
 
 # Cmake 3.0 and above
 #find_package(GLEW REQUIRED)
@@ -74,37 +72,42 @@ src/shader.h
 src/shader.cpp
 )
 
-ADD_EXECUTABLE(gles3d
-${SOIL_SRC}
-src/pi3d.cpp
-src/pipkg.cpp
-src/eglstate.h
-src/camera.h
-src/eglinit.c
-src/shader.frag
-src/shader.vert
-src/normal.frag
-src/normal.vert
-src/normal.geom
-src/shader.h
-src/pishader.cpp
-)
+
+# Test GLES
+#add_definitions(-DHAVEGLES -DHAVEGLES)
 
 
-#ADD_EXECUTABLE(create
+#ADD_EXECUTABLE(gles3d
 #${SOIL_SRC}
-#src/Mesh.cpp
-#src/create.cpp
-#src/pkg.cpp
-#src/Mesh.h
+#src/pi3d.cpp
+#src/pipkg.cpp
+#src/eglstate.h
+#src/camera.h
+#src/eglinit.c
 #src/shader.frag
 #src/shader.vert
 #src/normal.frag
 #src/normal.vert
 #src/normal.geom
 #src/shader.h
-#src/shader.cpp
+#src/pishader.cpp
 #)
+
+
+ADD_EXECUTABLE(create
+${SOIL_SRC}
+src/Mesh.cpp
+src/create.cpp
+src/pkg.cpp
+src/Mesh.h
+src/shader.frag
+src/shader.vert
+src/normal.frag
+src/normal.vert
+src/normal.geom
+src/shader.h
+src/shader.cpp
+)
 
 
 add_subdirectory(assimp)
@@ -120,8 +123,8 @@ ELSE(WIN32)
 #TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw /home/olof/work/pi3d/glew/lib/libGLEW.a  X11 Xext) 
 #TARGET_LINK_LIBRARIES(create assimp m GL glfw /home/olof/work/pi3d/glew/lib/libGLEW.a  X11 Xext)
 TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw GLEW  X11 Xext) 
-#TARGET_LINK_LIBRARIES(create assimp m GL glfw GLEW  X11 Xext)
-TARGET_LINK_LIBRARIES(gles3d  m GL GLESv2 EGL X11)
+TARGET_LINK_LIBRARIES(create assimp m GL glfw GLEW  X11 Xext)
+#TARGET_LINK_LIBRARIES(gles3d  m GL GLESv2 EGL X11)
 
 
 ENDIF(WIN32)

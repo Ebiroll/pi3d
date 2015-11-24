@@ -20,6 +20,41 @@
 // Builtin GL ES functions
 // http://www.shaderific.com/glsl-functions/
 //
+#define GLSL(src) "#version 120\n" #src
+
+const char* vs = GLSL(
+            attribute vec3 position;
+            uniform mat4 model;
+            uniform mat4 view;
+            uniform mat4 projection;
+            void main()
+            {
+              gl_Position =  projection * view  * vec4(position.x,position.y,position.z,1.0);
+            });
+
+
+const char* fs =
+        "uniform vec3      iResolution;\n"           // viewport resolution (in pixels)
+        "uniform float     time;\n"                  // shader playback time (in seconds)
+
+        "void main()\n"
+        "{\n"
+          "vec3 c;\n"
+          "float l,z=time;\n"
+          "for(int i=0;i<3;i++)\n"
+          "{\n"
+                "vec2 uv,p=gl_FragCoord.xy/iResolution.xy;\n"
+                "uv=p;\n"
+                "p-=.5;\n"
+                "p.x*=iResolution.x/iResolution.y;\n"
+                "z+=.07;\n"
+                "l=length(p);\n"
+                "uv+=p/l*(sin(z)+1.)*abs(sin(l*9.-z*2.));\n"
+                "c[i]=.01/length(abs(mod(uv,1.)-.5));\n"
+          "}\n"
+          "gl_FragColor=vec4(c/l,time);\n"
+          "//gl_FragColor=vec4(1.0,0.0,1.0,1.0);\n"
+        "}\n";
 
 
 
