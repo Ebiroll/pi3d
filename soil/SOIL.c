@@ -26,8 +26,17 @@
 	#include <Carbon/Carbon.h>
 	#define APIENTRY
 #else
+#ifdef HAVEGLES
+#include "GLES/gl.h"
+#include "GLES2/gl2.h"
+#ifndef APIENTRY
+#define APIENTRY
+#define GL_CLAMP     GL_CLAMP_TO_EDGE
+#endif
+#else
 	#include <GL/gl.h>
 	#include <GL/glx.h>
+#endif
 #endif
 
 #include "SOIL.h"
@@ -1995,11 +2004,19 @@ int query_DXT_capability( void )
 				CFRelease( extensionName );
 				CFRelease( bundle );
 			#else
+#ifdef HAVEGLES
+            ext_addr =  (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)
+                    eglGetProcAddress
+                    (
+                        (const GLubyte *)"glCompressedTexImage2DARB"
+                    );
+#else
 				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)
 						glXGetProcAddressARB
 						(
 							(const GLubyte *)"glCompressedTexImage2DARB"
 						);
+#endif
 			#endif
 			/*	Flag it so no checks needed later	*/
 			if( NULL == ext_addr )

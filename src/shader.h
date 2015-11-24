@@ -1,7 +1,14 @@
 #ifndef SHADER_H
 #define SHADER_H
 
+#ifdef HAVEGLES
+//#include <GL/glew.h>
+#include "EGL/egl.h"
+#include "GLES/gl.h"
+#include "GLES2/gl2.h"
+#else
 #include <GL/glew.h>
+#endif
 
 #include <string>
 #include <fstream>

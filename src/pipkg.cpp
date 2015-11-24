@@ -23,7 +23,13 @@ using std::string;
 #include "EGL/egl.h"
 #include "GLES/gl.h"
 #include "GLES2/gl2.h"
-#include "GLES2/gl2ext.h"
+
+// Should be defined somewhere
+#ifndef GLAPIENTRY
+#define GLAPIENTRY
+#endif
+
+//#include "GLES2/gl2ext.h"
 
 #include "pipkg.h"
 

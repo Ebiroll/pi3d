@@ -22,13 +22,29 @@ using std::string;
 #include "shader.h"
 #include "camera.h"
 #include "EGL/egl.h"
+#include "GLES/glplatform.h"
 #include "GLES/gl.h"
 #include "GLES2/gl2.h"
+
+// Should be defined somewhere
+#ifndef GLAPIENTRY
+#define GLAPIENTRY __stdcall
+#endif
+
 #include "GLES2/gl2ext.h"
+#ifdef BCMHOST
 #include "bcm_host.h"
+#endif
 extern "C" {
 #include "eglstate.h"	
 }
+#ifdef _X11_XLIB_H_
+
+#include <EGL/egl.h>
+#include <GLES2/gl2.h>
+
+#endif
+
 
 static STATE_T _state, *state = &_state;	// global graphics state
 
@@ -99,7 +115,7 @@ static void init_model_proj(STATE_T *state)
    hht = nearp * (float)tan(45.0 / 2.0 / 180.0 * M_PI);
    hwd = hht * (float)state->screen_width / (float)state->screen_height;
 
-   glFrustumf(-hwd, hwd, -hht, hht, nearp, farp);
+   //glFrustumf(-hwd, hwd, -hht, hht, nearp, farp);
    
    glEnableClientState( GL_VERTEX_ARRAY );
    //glVertexPointer( 3, GL_BYTE, 0, quadx );
@@ -124,12 +140,12 @@ GLushort  indexes[] = {0,1,2,2,3,0};
 
 ////////////////// Default shaders ///////////
 
-//#define GLSL(src) "#version 100\n" #src
-#define GLSL(src) #src
+#define GLSL(src) "#version 100\n" #src
+//#define GLSL(src) #src
 
 
 const char* vs = GLSL(
-        attribute vec3 position;
+        attribute highp vec3 position;
         attribute vec3 normal;
         attribute vec2 vtex;
 
@@ -149,8 +165,12 @@ const char* vs = GLSL(
         });
 
 const char* fs = GLSL(
-            varying vec2 texcoord;
-            uniform sampler2D tex;
+//            precision highp vec2;
+//            precision mediump float;
+//            precision mediump sampler2D;
+
+//           varying highp vec2 texcoord;
+//           uniform sampler2D tex;
 
             void main()
             {
@@ -266,8 +286,11 @@ int main(int argc, char* argv[])
   char fragment_shader[512];
   char geometry_shader[512];
   
+#ifdef BCMHOST
   bcm_host_init();
+#endif
   memset(state, 0, sizeof(*state));
+
   oglinit(state);
 
 
@@ -378,6 +401,46 @@ int main(int argc, char* argv[])
    shader.Use();
 
    float time=0.0f;
+#ifdef _X11_XLIB_H_
+   Display *XDisplay;
+
+   XDisplay = XOpenDisplay(NULL);
+   if (!XDisplay) {
+       fprintf(stderr, "Error: failed to open X display.\n");
+       return -1;
+   }
+
+   Atom XWMDeleteMessage =
+       XInternAtom(XDisplay, "WM_DELETE_WINDOW", False);
+
+
+    while (0) {
+
+        XEvent event;
+
+        XNextEvent(XDisplay, &event);
+
+        if ((event.type == MotionNotify) ||
+            (event.type == Expose))
+        {
+            printf(".\n");
+            glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            //glBindBuffer(GL_ARRAY_BUFFER, state->buf);
+            //glDrawArrays( GL_TRIANGLES, 0, 3);
+            //eglSwapBuffers(state->display,state->surface);
+
+            //Redraw(state->screen_width, state->screen_height);
+        }
+        else if (event.type == ClientMessage) {
+            if (event.xclient.data.l[0] == XWMDeleteMessage)
+                break;
+        }
+    }
+    //XSetWMProtocols(XDisplay, XWindow, &XWMDeleteMessage, 0);
+#endif
+
+
 
    while (true) {
 
@@ -469,7 +532,7 @@ int main(int argc, char* argv[])
 	  // glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
 
            glBindBuffer(GL_ARRAY_BUFFER, state->buf);	  
-	   glDrawArrays( GL_TRIANGLES, 0, 3);
+           glDrawArrays( GL_TRIANGLES, 0, 3);
       }
 
       //if (mesh) mesh->render(shader.Program);

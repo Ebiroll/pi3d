@@ -4,8 +4,16 @@
 #include <sstream>
 #include <iostream>
 
+#ifdef HAVEGLES
+#include "EGL/egl.h"
+#include "GLES/gl.h"
+#include "GLES2/gl2.h"
+#else
 #include <GL/glew.h>
+#endif
 
+
+#if 0
 #define GLSL(src) "#version 120\n" #src
 
 const char* vs = GLSL(
@@ -38,6 +46,25 @@ const char* fs = GLSL(
                 //gl_FragColor = vec4(0.0,1.0,0.0,1.0);
                 //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);
             });
+
+#endif
+
+
+static void showlog(GLint shader)
+{
+   // Prints the compile log for a shader
+   char log[1024];
+   glGetShaderInfoLog(shader,sizeof log,NULL,log);
+   printf("%d:shader:\n%s\n", shader, log);
+}
+
+static void showprogramlog(GLint shader)
+{
+   // Prints the information log for a program object
+   char log[1024];
+   glGetProgramInfoLog(shader,sizeof log,NULL,log);
+   printf("%d:program:\n%s\n", shader, log);
+}
 
 
 
@@ -105,12 +132,16 @@ Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLcha
     vertex = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertex, 1, &vShaderCode, NULL);
     glCompileShader(vertex);
+    showlog(vertex);
     checkCompileErrors(vertex, "VERTEX");
     // Fragment Shader
     fragment = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragment, 1, &fShaderCode, NULL);
     glCompileShader(fragment);
+    showlog(fragment);
     checkCompileErrors(fragment, "FRAGMENT");
+
+  #ifndef HAVEGLES  
     // If geometry shader is given, compile geometry shader
     if(geometryPath != nullptr)
     {
@@ -120,12 +151,15 @@ Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLcha
         glCompileShader(geometry);
         checkCompileErrors(geometry, "GEOMETRY");
     }
+   #endif 
     this->Program = glCreateProgram();
     // Shader Program
     glAttachShader(this->Program, vertex);
     glAttachShader(this->Program, fragment);
+#ifndef HAVEGLES
     if(geometry > -1)
         glAttachShader(this->Program, geometry);
+#endif
 
 }
 
@@ -133,13 +167,16 @@ Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLcha
 void Shader::linkProg()
 {
     glLinkProgram(this->Program);
+    showprogramlog(this->Program);
     checkCompileErrors(this->Program, "PROGRAM");
     // Delete the shaders as they're linked into our program now and no longer necessery
     glDeleteShader(vertex);
     glDeleteShader(fragment);
+#ifndef HAVEGLES
     if(geometry > -1)
         glDeleteShader(geometry);
-
+#endif
+ 
 }
 
 

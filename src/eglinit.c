@@ -29,15 +29,19 @@
  * http://pandorawiki.org/Porting_to_GLES_from_GL
  */
 
+#define HAVEGLES 1
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
 //#include <GLES/gl.h>
-#include "eglstate.h"
+//#include "eglstate.h"
 #include <assert.h>
 //#include <openvg.h>
+
+#include "eglstate.h"
 
 #define WIDTH 800
 #define HEIGHT 800
@@ -67,15 +71,14 @@ static EGLint const config_attribute_list[] = {
 	EGL_GREEN_SIZE, 8,
 	EGL_BLUE_SIZE, 8,
 	EGL_ALPHA_SIZE, 8,
-	EGL_BUFFER_SIZE, 32,
+    //EGL_BUFFER_SIZE, 32,
 
-	EGL_STENCIL_SIZE, 0,
-	EGL_DEPTH_SIZE, 0,
+    //EGL_STENCIL_SIZE, 0,
+    //EGL_DEPTH_SIZE, 0,
 
-	EGL_SAMPLES, 4,
+    //  EGL_SAMPLES, 4,
 
 	EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-
 	EGL_SURFACE_TYPE, EGL_WINDOW_BIT | EGL_PIXMAP_BIT,
 
 
@@ -90,10 +93,6 @@ static const EGLint context_attribute_list[] = {
 	EGL_CONTEXT_CLIENT_VERSION, 2,
 	EGL_NONE
 };
-
-EGLDisplay egl_display;
-EGLSurface egl_surface;
-
 
 
 void oglinit(STATE_T * state) 
@@ -120,18 +119,22 @@ void oglinit(STATE_T * state)
 				CopyFromParent, InputOutput,
 				CopyFromParent, CWEventMask, &XWinAttr);
 
+    state->screen_width=WIDTH;
+    state->screen_height=HEIGHT;
+
+
 	Atom XWMDeleteMessage =
 		XInternAtom(XDisplay, "WM_DELETE_WINDOW", False);
 
 	XMapWindow(XDisplay, XWindow);
-	XStoreName(XDisplay, XWindow, "Mali libs test");
+    XStoreName(XDisplay, XWindow, "GLES test");
 	XSetWMProtocols(XDisplay, XWindow, &XWMDeleteMessage, 1);
 
-	egl_display = eglGetDisplay((EGLNativeDisplayType) XDisplay);
+    state->display = eglGetDisplay((EGLNativeDisplayType) XDisplay);
 #else
 	state->display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 #endif /* _X11_XLIB_H_ */
-	if (egl_display == EGL_NO_DISPLAY) {
+    if (state->display == EGL_NO_DISPLAY) {
 		fprintf(stderr, "Error: No display found!\n");
 		return ;
 	}
@@ -140,7 +143,6 @@ void oglinit(STATE_T * state)
 		fprintf(stderr, "Error: eglInitialise failed!\n");
 		return;
 	}
-
 
 	
 	printf("EGL Version: \"%s\"\n",
@@ -151,8 +153,7 @@ void oglinit(STATE_T * state)
 	       eglQueryString(state->display, EGL_EXTENSIONS));
 
 
-
-	result=eglBindAPI(EGL_OPENVG_API);
+    result=eglBindAPI(EGL_OPENGL_ES_API);
 
 	if (result==EGL_FALSE) {
 		fprintf(stderr, "Error: eglBindAPI failed: 0x%08X\n",
@@ -160,18 +161,21 @@ void oglinit(STATE_T * state)
 	}
 
 	
-       eglChooseConfig(state->display, config_attribute_list, &config, 1,
-			&num_config);
+    eglChooseConfig(state->display, config_attribute_list, &config, 1,
+        &num_config);
+
+    if (num_config==0)
+    {
+        fprintf(stderr, "Error: eglChooseConfig found no usable config: 0x%08X\n",
+            eglGetError());
+    }
 
 
        //EGLConfig config;
 
 
 
-	
-
-
-	state->context = eglCreateContext(state->display, config, EGL_NO_CONTEXT, NULL);
+    state->context = eglCreateContext(state->display, config, EGL_NO_CONTEXT, context_attribute_list);
 	assert(state->context != EGL_NO_CONTEXT);
 
 	
@@ -187,8 +191,15 @@ void oglinit(STATE_T * state)
 	
 	
 #ifdef _X11_XLIB_H_
-	egl_surface = eglCreateWindowSurface(egl_display, config, XWindow,
-					     window_attribute_list);
+
+
+    state->surface = eglCreateWindowSurface(state->display, config, (EGLNativeWindowType)XWindow,
+                         NULL);
+    if ( state->surface == EGL_NO_SURFACE )
+    {
+       fprintf(stderr,"eglCreateWindowSurface failed %d\n", eglGetError());
+    }
+    assert(state->surface != EGL_NO_SURFACE);
 #else
 	//egl_surface = eglCreateWindowSurface(egl_display, config,
 	//				     &native_window,
@@ -221,6 +232,14 @@ void oglinit(STATE_T * state)
 
 	// connect the context to the surface
 	result = eglMakeCurrent(state->display, state->surface, state->surface, state->context);
+
+
+
+    if ( result == EGL_FALSE )
+    {
+       fprintf(stderr,"eglMakeCurrent failed 0x%08X\n", eglGetError());
+    }
+
 	assert(EGL_FALSE != result);
 
 	
@@ -244,6 +263,7 @@ void oglinit(STATE_T * state)
 
 	
 #ifdef _X11_XLIB_H_
+#if 0
 	while (1) {
 		XEvent event;
 
@@ -251,13 +271,17 @@ void oglinit(STATE_T * state)
 
 		if ((event.type == MotionNotify) ||
 		    (event.type == Expose))
-			Redraw(width, height);
+        {
+            printf(".\n");
+            //Redraw(state->screen_width, state->screen_height);
+        }
 		else if (event.type == ClientMessage) {
 			if (event.xclient.data.l[0] == XWMDeleteMessage)
 				break;
 		}
 	}
 	XSetWMProtocols(XDisplay, XWindow, &XWMDeleteMessage, 0);
+#endif
 #endif
 	return;
 }
