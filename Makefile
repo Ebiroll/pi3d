@@ -13,7 +13,7 @@ INCLUDES+=-I/opt/vc/include/ -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc
 
 CGOFILES = openvg.go
 
-all:	pi3d triangle
+all:	pi3d triangle triangle2
 
 pi3d: pi3d.o bcminit.o pipkg.o shader.o libsoil.a
 	g++  -g  $(LIBFLAGS) -lbcm_host -lvchiq_arm -ljpeg -lpthread -lrt -lm  bcminit.o pi3d.o pipkg.o shader.o libsoil.a  -o pi3d
@@ -21,9 +21,15 @@ pi3d: pi3d.o bcminit.o pipkg.o shader.o libsoil.a
 triangle: triangle.o shader.o
 	g++  -g  $(LIBFLAGS) -lbcm_host -lvchiq_arm -ljpeg -lpthread -lrt -lm  triangle.o shader.o  -o triangle
 
+triangle2: triangle2.o shader.o
+	g++  -g  $(LIBFLAGS) -lbcm_host -lvchiq_arm -ljpeg -lpthread -lrt -lm  triangle2.o shader.o  -o triangle2
+
 
 triangle.o:	src/triangle.cpp
 	g++ $(CXXFLAGS) -O2 -fPIC -Wall $(INCLUDEFLAGS) -D BCMHOST -c src/triangle.cpp
+
+triangle2.o:	src/triangle2.cpp
+	g++ $(CXXFLAGS) -O2 -fPIC -Wall $(INCLUDEFLAGS) -D BCMHOST -c src/triangle2.cpp
 
 pi3d.o:	src/pi3d.cpp
 	g++ $(CXXFLAGS) -O2 -fPIC -Wall $(INCLUDEFLAGS) -D BCMHOST -c src/pi3d.cpp
