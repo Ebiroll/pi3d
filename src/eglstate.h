@@ -5,7 +5,8 @@ typedef struct {
 	uint32_t screen_height;
 	// OpenGL|ES objects
 #ifdef HAVEGLES
-    GLuint buf;
+        GLuint buf;
+        GLuint attr_position;
 	EGLDisplay display;
 	EGLSurface surface;
 	EGLContext context;
