@@ -31,6 +31,8 @@ using std::string;
 #define GLAPIENTRY __stdcall
 #endif
 
+static GLint attr_pos = 0;
+
 #include "GLES2/gl2ext.h"
 #ifdef BCMHOST
 #include "bcm_host.h"
@@ -126,11 +128,11 @@ static void init_model_proj(STATE_T *state)
 
 
 float vertices[] = {
-     -10.0f,  -10.0f, 0.0f , // Vertex 0 (X, Y, Z)
-     10.0f, -10.0f, 0.0f , // Vertex 1 (X, Y, Z)
-     10.0f, 10.0f, 0.0f,   // Vertex 2 (X, Y ,Z)
-     -10.0f,  10.0f, 0.0f , // Vertex 3 (X, Y, Z)
-     -10.0f, -10.0f, 0.0f   // Vertex 4 (X, Y ,Z)
+     -1.0f,  -1.0f, 0.0f , // Vertex 0 (X, Y, Z)
+     1.0f, -1.0f, 0.0f , // Vertex 1 (X, Y, Z)
+     1.0f, 1.0f, 0.0f,   // Vertex 2 (X, Y ,Z)
+     -1.0f,  1.0f, 0.0f , // Vertex 3 (X, Y, Z)
+     -1.0f, -1.0f, 0.0f   // Vertex 4 (X, Y ,Z)
 
 };
 
@@ -144,6 +146,21 @@ GLushort  indexes[] = {0,1,2,2,3,0};
 //#define GLSL(src) #src
 
 
+const char *vs =
+      "uniform mat4 projection;\n"
+      "attribute vec3 position;\n"
+      "attribute vec3 normal;\n"
+      "attribute vec2 tex;\n"
+      "void main() {\n"
+      "   gl_Position = projection * vec4(position, 1.0);\n"
+      "}\n";
+
+   const char *fs =
+      "void main() {\n"
+      "   gl_FragColor = vec4(1.0,1.0,0.0,1.0);\n"
+      "}\n";
+
+#if 0
 const char* vs = GLSL(
         attribute highp vec3 position;
         attribute vec3 normal;
@@ -164,6 +181,7 @@ const char* vs = GLSL(
             texcoord = vec2(vtex.x, 1.0 - vtex.y);
         });
 
+
 const char* fs = GLSL(
 //            precision highp vec2;
 //            precision mediump float;
@@ -178,6 +196,9 @@ const char* fs = GLSL(
                 gl_FragColor = vec4(0.0,1.0,0.0,1.0);
                 //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);
             });
+
+#endif
+
 
 
 
@@ -210,7 +231,61 @@ GLfloat angleX=0.0;
 GLfloat angleY=0.0;
 
 bool rotating=true;
+//////////////////////////////////////////////////
 
+static GLfloat view_rotx = 0.0, view_roty = 0.0;
+
+static void
+make_z_rot_matrix(GLfloat angle, GLfloat *m)
+{
+   float c = cos(angle * M_PI / 180.0);
+   float s = sin(angle * M_PI / 180.0);
+   int i;
+   for (i = 0; i < 16; i++)
+      m[i] = 0.0;
+   m[0] = m[5] = m[10] = m[15] = 1.0;
+
+   m[0] = c;
+   m[1] = s;
+   m[4] = -s;
+   m[5] = c;
+}
+
+static void
+make_scale_matrix(GLfloat xs, GLfloat ys, GLfloat zs, GLfloat *m)
+{
+   int i;
+   for (i = 0; i < 16; i++)
+      m[i] = 0.0;
+   m[0] = xs;
+   m[5] = ys;
+   m[10] = zs;
+   m[15] = 1.0;
+}
+
+
+static void
+mul_matrix(GLfloat *prod, const GLfloat *a, const GLfloat *b)
+{
+#define A(row,col)  a[(col<<2)+row]
+#define B(row,col)  b[(col<<2)+row]
+#define P(row,col)  p[(col<<2)+row]
+   GLfloat p[16];
+   GLint i;
+   for (i = 0; i < 4; i++) {
+      const GLfloat ai0=A(i,0),  ai1=A(i,1),  ai2=A(i,2),  ai3=A(i,3);
+      P(i,0) = ai0 * B(0,0) + ai1 * B(1,0) + ai2 * B(2,0) + ai3 * B(3,0);
+      P(i,1) = ai0 * B(0,1) + ai1 * B(1,1) + ai2 * B(2,1) + ai3 * B(3,1);
+      P(i,2) = ai0 * B(0,2) + ai1 * B(1,2) + ai2 * B(2,2) + ai3 * B(3,2);
+      P(i,3) = ai0 * B(0,3) + ai1 * B(1,3) + ai2 * B(2,3) + ai3 * B(3,3);
+   }
+   memcpy(prod, p, sizeof(p));
+#undef A
+#undef B
+#undef PROD
+}
+
+/////////////////////////////////////////////////
 
 void createSurface()
 {
@@ -219,6 +294,7 @@ void createSurface()
    glBindBuffer(GL_ARRAY_BUFFER, state->buf);
    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+   
    GLuint ib;
    glGenBuffers(1, &ib);
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib);
@@ -319,7 +395,7 @@ int main(int argc, char* argv[])
 
 
    // Setup the model world
-   init_model_proj(state);
+   //init_model_proj(state);
 
 
    
@@ -355,11 +431,14 @@ int main(int argc, char* argv[])
 
 
    // This binds the attrib opengl 2.1 stuff
-   glBindAttribLocation (shader.Program, 0, "position");
+   
+   glBindAttribLocation (shader.Program, attr_pos , "position");
    glBindAttribLocation (shader.Program, 1, "normal");
    glBindAttribLocation (shader.Program, 2, "vtex");
    glBindAttribLocation (shader.Program, 3, "index");
 
+   // glBindAttribLocation(program, 0, "pos");
+   
 
 
    //strcpy(out_filename,filename);
@@ -391,10 +470,10 @@ int main(int argc, char* argv[])
    //setupTestData();
 
 
-   glColor4f(0.8f, 0.1f, 0.1f,1.0f);
+   glColor4f(0.8f, 0.5f, 0.1f,1.0f);
 
-   glEnable(GL_BLEND);
-   glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+   //glEnable(GL_BLEND);
+   //glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
 
    shader.linkProg();
@@ -441,13 +520,16 @@ int main(int argc, char* argv[])
 #endif
 
 
-
+    shader.Use();
+    GLint pLoc = glGetUniformLocation(shader.Program, "projection");
+    printf("Uniform projection at %d\n", pLoc);
+    
    while (true) {
 
      glBindFramebuffer(GL_FRAMEBUFFER,0);
-     glLoadIdentity();
+     //glLoadIdentity();
      // move camera back to see the cube
-     glTranslatef(0.f, 0.f, -10.0f);
+     //glTranslatef(0.f, 0.f, -10.0f);
 
      
     // Set frame time
@@ -488,13 +570,28 @@ int main(int argc, char* argv[])
       GLint mvpLoc = glGetUniformLocation(shader.Program, "mvp");
 
 
+      //printf("Uniform projection at %d\n", projLoc);
+      //printf("Attrib pos at %d\n", attr_pos);
+      //printf("Attrib color at %d\n", attr_color);
 
-      glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+      
+      //////////////////////////////
+
+         GLfloat mat[16], rot[16], scale[16];
+
+         /* Set modelview/projection matrix */
+         make_z_rot_matrix(view_rotx, rot);
+         make_scale_matrix(0.5, 0.5, 0.5, scale);
+         mul_matrix(mat, rot, scale);
+         glUniformMatrix4fv(projLoc, 1, GL_FALSE, mat);
+         ///////////////////////////
+
+	 //glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
       // Note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
-      glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+      // glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
      // Transformation matrices
-     //glm::mat4 projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeigth, 0.1f, 100.0f);
+	 //glm::mat4 projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeigth, 0.1f, 100.0f);
      //glm::mat4 view = camera.GetViewMatrix();
      //glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
      //glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -531,7 +628,13 @@ int main(int argc, char* argv[])
           // OLAS HERE!!  glBindVertexArrayOES(VAO);
 	  // glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
 
-           glBindBuffer(GL_ARRAY_BUFFER, state->buf);	  
+           glBindBuffer(GL_ARRAY_BUFFER, state->buf);
+           glVertexAttribPointer(attr_pos, 3, GL_FLOAT, GL_FALSE, 0, vertices);
+	   //glVertexAttribPointer(attr_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
+           //glVertexAttribPointer(attr_color, 3, GL_FLOAT, GL_FALSE, 0, colors);
+
+	   printf(".");
+	   
            glDrawArrays( GL_TRIANGLES, 0, 3);
       }
 

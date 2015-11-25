@@ -1,6 +1,7 @@
 //#ifdef __arm__
 #include <EGL/egl.h>
 #include <GLES/gl.h>
+#define HAVEGLES 1
 #include "eglstate.h"
 #include <bcm_host.h>
 #include <assert.h>
@@ -47,13 +48,17 @@ extern void oglinit(STATE_T * state) {
 	// bind OpenVG API
 	//eglBindAPI(EGL_OPENVG_API);
 
+	eglBindAPI(EGL_OPENGL_ES_API);
+        //result = eglBindAPI(EGL_OPENGL_ES_API);
+        //assert(EGL_FALSE != result);
+        //check();
+
+	
+
 	// get an appropriate EGL frame buffer configuration
 	result = eglChooseConfig(state->display, attribute_list, &config, 1, &num_config);
 	assert(EGL_FALSE != result);
 
-        result = eglBindAPI(EGL_OPENGL_ES_API);
-        assert(EGL_FALSE != result);
-        //check();
 	
 	// create an EGL rendering context
 	state->context = eglCreateContext(state->display, config, EGL_NO_CONTEXT, context_attributes);
@@ -90,8 +95,8 @@ extern void oglinit(STATE_T * state) {
 	assert(state->surface != EGL_NO_SURFACE);
 
 	// preserve the buffers on swap
-	result = eglSurfaceAttrib(state->display, state->surface, EGL_SWAP_BEHAVIOR, EGL_BUFFER_PRESERVED);
-	assert(EGL_FALSE != result);
+	//result = eglSurfaceAttrib(state->display, state->surface, EGL_SWAP_BEHAVIOR, EGL_BUFFER_PRESERVED);
+	//assert(EGL_FALSE != result);
 
 	// connect the context to the surface
 	result = eglMakeCurrent(state->display, state->surface, state->surface, state->context);
@@ -102,15 +107,15 @@ extern void oglinit(STATE_T * state) {
 
 	//glMatrixMode(GL_PROJECTION);
 	//glLoadIdentity();
-        glMatrixMode(GL_MODELVIEW);
+        //glMatrixMode(GL_MODELVIEW);
 
 	glClearColor(0.15f, 0.25f, 0.35f, 1.0f);
 
 	// Enable back face culling.
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 	
 	
-	float ratio = (float)state->screen_width / (float)state->screen_height;
+	//float ratio = (float)state->screen_width / (float)state->screen_height;
 	//glFrustumf(-ratio, ratio, -1.0f, 1.0f, 1.0f, 10.0f);
 
 
