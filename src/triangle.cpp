@@ -31,6 +31,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/glm.hpp>
+
 #include <assert.h>
 #include <unistd.h>
 #include "shader.h"
@@ -54,14 +58,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define check() assert(glGetError() == 0)
 
 const char *vs =
+      "uniform mat4 mvp;\n"
       "attribute vec3 position;\n"
+      "varying vec2 tcoord;"
       "void main() {\n"
-      "   gl_Position = vec4(position, 1.0);\n"
+      "   gl_Position = mvp * vec4(position, 1.0);\n"
+      "   tcoord = position.xy*0.1+0.5;"
       "}\n";
 
    const char *fs =
+     "varying vec2 tcoord;"
       "void main() {\n"
-      "   gl_FragColor = vec4(1.0,1.0,0.0,1.0);\n"
+      "   gl_FragColor = vec4(tcoord.x,tcoord.y,0.0,1.0);\n"
       "}\n";
 
 typedef struct
@@ -73,6 +81,8 @@ typedef struct
    EGLSurface surface;
    EGLContext context;
    GLuint tex[6];
+   GLuint  buf;
+   GLuint  attr_position;
 // model rotation vector and direction
    GLfloat rot_angle_x_inc;
    GLfloat rot_angle_y_inc;
@@ -150,27 +160,29 @@ static void init_ogl(CUBE_STATE_T *state)
    // get an EGL display connection
    state->display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
    assert(state->display!=EGL_NO_DISPLAY);
-
+   check();
+   
    // initialize the EGL display connection
    result = eglInitialize(state->display, NULL, NULL);
    assert(EGL_FALSE != result);
-
+   check();
    
    // get an appropriate EGL frame buffer configuration
    result = eglChooseConfig(state->display, attribute_list, &config, 1, &num_config);
    assert(EGL_FALSE != result);
-
+   check();
 
    eglBindAPI(EGL_OPENGL_ES_API);
-
+   assert(EGL_FALSE != result);
+   check();
    
    // create an EGL2 rendering context
-   //state->context = eglCreateContext(state->display, config, EGL_NO_CONTEXT, context_attributes);
-   //assert(state->context!=EGL_NO_CONTEXT);
+   state->context = eglCreateContext(state->display, config, EGL_NO_CONTEXT, context_attributes);
+   assert(state->context!=EGL_NO_CONTEXT);
 
    // create an EGL rendering context
-   state->context = eglCreateContext(state->display, config, EGL_NO_CONTEXT,NULL);
-   assert(state->context!=EGL_NO_CONTEXT);
+   //state->context = eglCreateContext(state->display, config, EGL_NO_CONTEXT,NULL);
+   //assert(state->context!=EGL_NO_CONTEXT);
 
    // create an EGL window surface
    success = graphics_get_display_size(0 /* LCD */, &state->screen_width, &state->screen_height);
@@ -191,7 +203,7 @@ static void init_ogl(CUBE_STATE_T *state)
          
    dispman_element = vc_dispmanx_element_add ( dispman_update, dispman_display,
       0/*layer*/, &dst_rect, 0/*src*/,
-					       &src_rect, DISPMANX_PROTECTION_NONE, 0 /*alpha*/, 0/*clamp*/, (DISPMANX_TRANSFORM_T)0/*transform*/);
+      &src_rect, DISPMANX_PROTECTION_NONE, 0 /*alpha*/, 0/*clamp*/, (DISPMANX_TRANSFORM_T)0/*transform*/);
       
    nativewindow.element = dispman_element;
    nativewindow.width = state->screen_width;
@@ -200,18 +212,20 @@ static void init_ogl(CUBE_STATE_T *state)
       
    state->surface = eglCreateWindowSurface( state->display, config, &nativewindow, NULL );
    assert(state->surface != EGL_NO_SURFACE);
-
+   check();
+   
    // connect the context to the surface
    result = eglMakeCurrent(state->display, state->surface, state->surface, state->context);
    assert(EGL_FALSE != result);
-
+   check();
+   
    // Set background color and clear buffers
    glClearColor(0.15f, 0.25f, 0.35f, 1.0f);
 
    // Enable back face culling.
    glEnable(GL_CULL_FACE);
-
-   glMatrixMode(GL_MODELVIEW);
+   check();
+   //glMatrixMode(GL_MODELVIEW);
 }
 
 /***********************************************************
@@ -244,8 +258,8 @@ static void init_model_proj(CUBE_STATE_T *state)
 
    glFrustumf(-hwd, hwd, -hht, hht, nearp, farp);
    
-   glEnableClientState( GL_VERTEX_ARRAY );
-   glVertexPointer( 3, GL_BYTE, 0, quadx );
+   //glEnableClientState( GL_VERTEX_ARRAY );
+   //glVertexPointer( 3, GL_FLOAT, 0, quadx );
 
    reset_model(state);
 }
@@ -545,6 +559,10 @@ static void exit_func(void)
 
 //==============================================================================
 
+
+GLfloat angleX=0.0;
+GLfloat angleY=0.0;
+
 int main ()
 {
   char vertex_shader[512];
@@ -560,12 +578,49 @@ int main ()
    // Start OGLES
    init_ogl(state);
 
-   //Shader shader(vertex_shader, fragment_shader,geometry_shader);
+   glm::mat4 model;
+   glm::mat4 ident;
+   glm::mat4 view;
+   glm::mat4 projection;
+
+   view = glm::translate(view, glm::vec3(0.0f, 0.0f, -30.0f));
+   projection = glm::perspective(45.0f, (GLfloat)state->screen_width/ (GLfloat) state->screen_height, 0.1f, 100.0f);
+
+   glm::mat4 mvp=projection * view *model;
+   
+   Shader shader(vertex_shader, fragment_shader,geometry_shader);
    {
 
      //glBindAttribLocation (shader.Program, 0 , "position");
-     //shader.linkProg();
-     //shader.Use();
+     shader.linkProg();
+     shader.Use();
+     
+     state->attr_position = glGetAttribLocation(shader.Program, "position");
+     check();
+     GLint mvpLoc = glGetUniformLocation(shader.Program, "mvp");
+     check();
+     printf("mvp projection at %d\n", mvpLoc);
+
+     
+     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+     check();
+
+     
+     glGenBuffers(1, &state->buf);
+     check();
+     
+     // Upload vertex data to a buffer
+     glBindBuffer(GL_ARRAY_BUFFER, state->buf);
+     glBufferData(GL_ARRAY_BUFFER, sizeof(quadx),
+                             quadx, GL_STATIC_DRAW);
+     check();
+     
+     glVertexAttribPointer(state->attr_position, 3, GL_FLOAT, 0, 12, 0);
+     glEnableVertexAttribArray(state->attr_position);
+     check();
+     
+     
+     shader.Use();
    
      // Setup the model world
      init_model_proj(state);
@@ -575,8 +630,21 @@ int main ()
 
      while (!terminate)
        {
-	 update_model(state);
-	 redraw_scene(state);
+          angleX+=0.002;
+          angleY+=0.004;
+	  model=ident;
+          model = glm::rotate(model, angleX, glm::vec3(1.0f, 0.0f, 0.1f));
+          model = glm::rotate(model, angleY, glm::vec3(0.0f, 1.0f, 0.1f));
+
+          mvp=projection * view * model;
+          glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+	  
+	 //update_model(state);
+	 //redraw_scene(state);
+         glBindBuffer(GL_ARRAY_BUFFER, state->buf);
+         shader.Use();
+	 glDrawArrays ( GL_TRIANGLE_STRIP, 0, 6*4 );
+         eglSwapBuffers(state->display, state->surface);
        }
    }
    exit_func();

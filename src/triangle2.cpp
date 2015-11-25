@@ -201,10 +201,10 @@ static void init_ogl(CUBE_STATE_T *state)
 }
 
    const GLchar *vs =
-              "attribute vec4 vertex;"
+              "attribute vec3 vertex;"
               "varying vec2 tcoord;"
               "void main(void) {"
-              " vec4 pos = vertex;"
+              " vec4 pos = vec4(vertex,1.0);"
               " gl_Position = pos;"
               " tcoord = vertex.xy*0.5+0.5;"
               "}";
@@ -233,10 +233,10 @@ static void init_ogl(CUBE_STATE_T *state)
 static void init_shaders(CUBE_STATE_T *state)
 {
    static const GLfloat vertex_data[] = {
-        -1.0,-1.0,1.0,1.0,
-        1.0,-1.0,1.0,1.0,
-        1.0,1.0,1.0,1.0,
-        -1.0,1.0,1.0,1.0
+        -1.0,-1.0,1.0,
+        1.0,-1.0,1.0,
+        1.0,1.0,1.0,
+        -1.0,1.0,1.0,
    };
    const GLchar *vshader_source =
               "attribute vec4 vertex;"
@@ -246,7 +246,7 @@ static void init_shaders(CUBE_STATE_T *state)
               " gl_Position = pos;"
               " tcoord = vertex.xy*0.5+0.5;"
               "}";
-      
+#if 0      
    //Mandelbrot
    const GLchar *mandelbrot_fshader_source =
 "uniform vec4 color;"
@@ -377,7 +377,9 @@ static void init_shaders(CUBE_STATE_T *state)
         state->unif_offset2 = glGetUniformLocation(state->program2, "offset");
         state->unif_centre2 = glGetUniformLocation(state->program2, "centre");
         check();
-   
+#endif
+
+	
         glClearColor ( 0.0, 1.0, 1.0, 1.0 );
         
         glGenBuffers(1, &state->buf);
@@ -412,7 +414,7 @@ static void init_shaders(CUBE_STATE_T *state)
         glBindBuffer(GL_ARRAY_BUFFER, state->buf);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data),
                              vertex_data, GL_STATIC_DRAW);
-        glVertexAttribPointer(state->attr_vertex, 4, GL_FLOAT, 0, 16, 0);
+        glVertexAttribPointer(state->attr_vertex, 3, GL_FLOAT, 0, 12, 0);
         glEnableVertexAttribArray(state->attr_vertex);
         check();
 }
@@ -558,7 +560,7 @@ int main ()
    while (!terminate)
    {
       int x, y, b;
-      currentTime=currentTime+0.05;
+      currentTime=currentTime+0.02;
       
       timeLoc = glGetUniformLocation(shader.Program, "time");
       glUniform1f(timeLoc,currentTime);
