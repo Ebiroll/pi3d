@@ -40,12 +40,7 @@ static GLint attr_pos = 0;
 extern "C" {
 #include "eglstate.h"	
 }
-#ifdef _X11_XLIB_H_
 
-#include <EGL/egl.h>
-#include <GLES2/gl2.h>
-
-#endif
 
 
 static STATE_T _state, *state = &_state;	// global graphics state
@@ -62,6 +57,15 @@ static STATE_T _state, *state = &_state;	// global graphics state
 #ifndef M_PI
    #define M_PI 3.141592654
 #endif
+
+float vertices[] = {
+     -1.0f,  -1.0f, 0.0f , // Vertex 0 (X, Y, Z)
+     1.0f, -1.0f, 0.0f , // Vertex 1 (X, Y, Z)
+     1.0f, 1.0f, 0.0f,   // Vertex 2 (X, Y ,Z)
+     -1.0f,  1.0f, 0.0f , // Vertex 3 (X, Y, Z)
+     -1.0f, -1.0f, 0.0f   // Vertex 4 (X, Y ,Z)
+
+};
 
 /***********************************************************
  * Name: reset_model
@@ -109,7 +113,6 @@ static void init_model_proj(STATE_T *state)
 
    glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
 
-   glViewport(0, 0, (GLsizei)state->screen_width, (GLsizei)state->screen_height);
       
    glMatrixMode(GL_PROJECTION);
    glLoadIdentity();
@@ -117,7 +120,7 @@ static void init_model_proj(STATE_T *state)
    hht = nearp * (float)tan(45.0 / 2.0 / 180.0 * M_PI);
    hwd = hht * (float)state->screen_width / (float)state->screen_height;
 
-   //glFrustumf(-hwd, hwd, -hht, hht, nearp, farp);
+   glFrustumf(-hwd, hwd, -hht, hht, nearp, farp);
    
    glEnableClientState( GL_VERTEX_ARRAY );
    //glVertexPointer( 3, GL_BYTE, 0, quadx );
@@ -127,14 +130,7 @@ static void init_model_proj(STATE_T *state)
 
 
 
-float vertices[] = {
-     -1.0f,  -1.0f, 0.0f , // Vertex 0 (X, Y, Z)
-     1.0f, -1.0f, 0.0f , // Vertex 1 (X, Y, Z)
-     1.0f, 1.0f, 0.0f,   // Vertex 2 (X, Y ,Z)
-     -1.0f,  1.0f, 0.0f , // Vertex 3 (X, Y, Z)
-     -1.0f, -1.0f, 0.0f   // Vertex 4 (X, Y ,Z)
 
-};
 
 GLushort  indexes[] = {0,1,2,2,3,0};
 
@@ -147,12 +143,12 @@ GLushort  indexes[] = {0,1,2,2,3,0};
 
 
 const char *vs =
-      "uniform mat4 projection;\n"
+      "uniform mat4 mvp;\n"
       "attribute vec3 position;\n"
       "attribute vec3 normal;\n"
       "attribute vec2 tex;\n"
       "void main() {\n"
-      "   gl_Position = projection * vec4(position, 1.0);\n"
+      "   gl_Position = mvp * vec4(position, 1.0);\n"
       "}\n";
 
    const char *fs =
@@ -386,12 +382,10 @@ int main(int argc, char* argv[])
   // }
 
 
-   
-
    // Setup some OpenGL options
    //glEnable(GL_DEPTH_TEST);
 
-   glEnable(GL_TEXTURE_2D);
+   //glEnable(GL_TEXTURE_2D);
 
 
    // Setup the model world
@@ -464,14 +458,9 @@ int main(int argc, char* argv[])
    {
               printf("Please specify model to load \n");
    }
-   createSurface();
-
-
+   //createSurface();
    //setupTestData();
-
-
-   glColor4f(0.8f, 0.5f, 0.1f,1.0f);
-
+   //glColor4f(0.8f, 0.5f, 0.1f,1.0f);
    //glEnable(GL_BLEND);
    //glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
@@ -479,6 +468,8 @@ int main(int argc, char* argv[])
    shader.linkProg();
    shader.Use();
 
+   glViewport(0, 0, (GLsizei)state->screen_width, (GLsizei)state->screen_height);
+   
    float time=0.0f;
 #ifdef _X11_XLIB_H_
    Display *XDisplay;
@@ -521,18 +512,24 @@ int main(int argc, char* argv[])
 
 
     shader.Use();
+
+    GLint mvpLoc = glGetUniformLocation(shader.Program, "mvp");
     GLint pLoc = glGetUniformLocation(shader.Program, "projection");
     printf("Uniform projection at %d\n", pLoc);
+    printf("mvp projection at %d\n", mvpLoc);
     
-   while (true) {
+    while (true) {
 
-     glBindFramebuffer(GL_FRAMEBUFFER,0);
+     // Try initiate projection
+     init_model_proj(state);
+     
+     //glBindFramebuffer(GL_FRAMEBUFFER,0);
      //glLoadIdentity();
      // move camera back to see the cube
      //glTranslatef(0.f, 0.f, -10.0f);
 
      
-    // Set frame time
+      // Set frame time
       GLfloat currentFrame = time;
       deltaTime = currentFrame - lastFrame;
       lastFrame = currentFrame;
@@ -543,9 +540,9 @@ int main(int argc, char* argv[])
 
 
       // Bind Textures using texture units, Mesh might have loaded a new texture
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, texture1);
-      glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
+      //glActiveTexture(GL_TEXTURE0);
+      //glBindTexture(GL_TEXTURE_2D, texture1);
+      //glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
 
       shader.Use();
 
@@ -577,28 +574,28 @@ int main(int argc, char* argv[])
       
       //////////////////////////////
 
-         GLfloat mat[16], rot[16], scale[16];
+      GLfloat mat[16], rot[16], scale[16];
 
-         /* Set modelview/projection matrix */
-         make_z_rot_matrix(view_rotx, rot);
-         make_scale_matrix(0.5, 0.5, 0.5, scale);
-         mul_matrix(mat, rot, scale);
-         glUniformMatrix4fv(projLoc, 1, GL_FALSE, mat);
-         ///////////////////////////
+      /* Set modelview/projection matrix */
+      make_z_rot_matrix(view_rotx, rot);
+      make_scale_matrix(0.5, 0.5, 0.5, scale);
+      mul_matrix(mat, rot, scale);
+      glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, mat);
+      ///////////////////////////
 
-	 //glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+      //glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
       // Note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
       // glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
      // Transformation matrices
-	 //glm::mat4 projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeigth, 0.1f, 100.0f);
+     //glm::mat4 projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeigth, 0.1f, 100.0f);
      //glm::mat4 view = camera.GetViewMatrix();
      //glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
      //glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
 
       glm::mat4 model;
-      model = glm::translate(model, center);
+      //model = glm::translate(model, center);
 
       if (rotating)
       {
@@ -614,28 +611,30 @@ int main(int argc, char* argv[])
       glm::mat4 mvp=projection * view * model;
 
       glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
-
-
+      //printf("+\n");
+      
       if (mdl_index_count>0)
       {
           // Draw mdl :-P
           //glBindMultiTextureEXT(GL_TEXTURE0, GL_TEXTURE_2D, texture1);
           //glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
-          glActiveTexture(GL_TEXTURE0);
-          glBindTexture(GL_TEXTURE_2D, texture1);
-          glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);  // Texture unit 0 is for base images.
+          //glActiveTexture(GL_TEXTURE0);
+          //glBindTexture(GL_TEXTURE_2D, texture1);
+          //glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);  // Texture unit 0 is for base images.
 
           // OLAS HERE!!  glBindVertexArrayOES(VAO);
 	  // glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
 
-           glBindBuffer(GL_ARRAY_BUFFER, state->buf);
+	   //glEnableClientState( GL_VERTEX_ARRAY );
+           //glBindBuffer(GL_ARRAY_BUFFER, state->buf);
            glVertexAttribPointer(attr_pos, 3, GL_FLOAT, GL_FALSE, 0, vertices);
 	   //glVertexAttribPointer(attr_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
            //glVertexAttribPointer(attr_color, 3, GL_FLOAT, GL_FALSE, 0, colors);
 
-	   printf(".");
-	   
-           glDrawArrays( GL_TRIANGLES, 0, 3);
+           glDrawArrays(GL_TRIANGLES, 0, 3);
+
+           glDisableVertexAttribArray(attr_pos);
+   	   //printf(".");
       }
 
       //if (mesh) mesh->render(shader.Program);

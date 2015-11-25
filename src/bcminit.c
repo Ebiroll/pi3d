@@ -38,7 +38,7 @@ extern void oglinit(STATE_T * state) {
 	EGLConfig config;
 
 	// get an EGL display connection
-	state->display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+	state->display  = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 	assert(state->display != EGL_NO_DISPLAY);
 
 	// initialize the EGL display connection
@@ -112,11 +112,19 @@ extern void oglinit(STATE_T * state) {
 	glClearColor(0.15f, 0.25f, 0.35f, 1.0f);
 
 	// Enable back face culling.
-	//glEnable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
+
+        const char *s;
+	
+        s = eglQueryString(state->display, EGL_EXTENSIONS);
+        printf("EGL_EXTENSIONS = %s\n", s);
+
+        s = eglQueryString(state->display, EGL_CLIENT_APIS);
+        printf("EGL_CLIENT_APIS = %s\n", s);
 	
 	
-	//float ratio = (float)state->screen_width / (float)state->screen_height;
-	//glFrustumf(-ratio, ratio, -1.0f, 1.0f, 1.0f, 10.0f);
+	float ratio = (float)state->screen_width / (float)state->screen_height;
+	glFrustumf(-ratio, ratio, -1.0f, 1.0f, 1.0f, -10.0f);
 
 
 	glClearColor(0.45f, 0.45f, 0.45f, 1.0f);
