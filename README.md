@@ -35,14 +35,14 @@ To build
 	cmake ..
 	#To run
 	pi3d ../test/tri_cube.blend
-    
-These programs wil need X-Windows to run     
-
-On the raspberry make will build pi3d ,triangle & triangle2
-pi3d still does not work properly, but I am getting closer.
-These programs uses EGL2 and does not need X-Windows to run.
 
 To run the nice looking test shaders try,
 
     ./create    -s ../shader/creation  
-    ./create    -s ../shader/tunnel 
+    ./create  -t ../test/drkwood2.png  -s ../shader/tunnel 
+    
+These programs wil need X-Windows to run     
+
+On the raspberry make will build pi3d ,triangle & triangle2.
+pi3d still does not work properly, but I am getting closer.
+These programs uses EGL2 and does not need X-Windows to run.
