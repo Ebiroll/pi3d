@@ -42,7 +42,8 @@ extern "C" {
 #include "eglstate.h"	
 }
 
-#define check() assert(glGetError() == 0)
+//#define check() assert(glGetError() == 0)
+#define check() assert(1==1)
 
 static STATE_T _state, *state = &_state;	// global graphics state
 
@@ -60,12 +61,19 @@ static STATE_T _state, *state = &_state;	// global graphics state
 #endif
 
 float vertices[] = {
-     -10.0f,  -10.0f, 0.0f , // Vertex 0 (X, Y, Z)
-     10.0f, -10.0f, 0.0f , // Vertex 1 (X, Y, Z)
-     10.0f, 10.0f, 0.0f,   // Vertex 2 (X, Y ,Z)
-     10.0f, 10.0f, 0.0f,   // Vertex 3 (X, Y ,Z)
-     -10.0f,  10.0f, 0.0f , // Vertex 4 (X, Y, Z)
-     -10.0f, -10.0f, 0.0f   // Vertex 5 (X, Y ,Z)
+     -5.0f,  -5.0f, 0.0f , // Vertex 0 (X, Y, Z)
+     5.0f, -5.0f, 0.0f , // Vertex 1 (X, Y, Z)
+     5.0f, 5.0f, 0.0f,   // Vertex 2 (X, Y ,Z)
+     5.0f, 5.0f, 0.0f,   // Vertex 3 (X, Y ,Z)
+     -5.0f,  5.0f, 0.0f , // Vertex 4 (X, Y, Z)
+     -5.0f, -5.0f, 0.0f,   // Vertex 5 (X, Y ,Z)
+
+     -10.0f,  -10.0f, -10.0f , // Vertex 0 (X, Y, Z)
+     10.0f, -10.0f, -10.0f , // Vertex 1 (X, Y, Z)
+     10.0f, 10.0f, -10.0f,   // Vertex 2 (X, Y ,Z)
+     10.0f, 10.0f, -10.0f,   // Vertex 3 (X, Y ,Z)
+     -10.0f,  10.0f, -10.0f , // Vertex 4 (X, Y, Z)
+     -10.0f, -10.0f, -10.0f   // Vertex 5 (X, Y ,Z)
 
 };
 
@@ -73,7 +81,7 @@ float vertices[] = {
 
 GLushort  indexes[] = {0,1,2,2,3,0};
 
-#define check() assert(glGetError() == 0)
+//#define check() assert(glGetError() == 0)
 
 ////////////////// Default shaders ///////////
 
@@ -86,15 +94,26 @@ GLushort  indexes[] = {0,1,2,2,3,0};
 
 
 const char *vs =
+      "#version 100\n"
       "uniform mat4 mvp;\n"
       "attribute vec3 position;\n"
+      "   varying vec2 texcoord;"
       "void main() {\n"
       "   gl_Position = mvp * vec4(position, 1.0);\n"
+      "   texcoord = vec2(position.x, 1.0 - position.y);"
       "}\n";
 
+//     
+
    const char *fs =
+     " precision highp float;\n"
+       " varying vec2 texcoord;\n"
+       " uniform sampler2D tex;\n"
       "void main() {\n"
-      "   gl_FragColor = vec4(1.0,1.0,0.0,1.0);\n"
+      "   //gl_FragColor = vec4(1.0,1.0,0.0,1.0);\n"
+      "   //vec3 col=texture2D(tex,texcoord).xyz;\n"
+      "	  //gl_FragColor = vec4(col,1.0);\n"
+      "   gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);"
       "}\n";
 
 #if 0
@@ -130,8 +149,8 @@ const char* fs = GLSL(
             void main()
             {
 	        //gl_FragColor = texture2D(tex, texcoord);
-                gl_FragColor = vec4(0.0,1.0,0.0,1.0);
-                //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);
+                //gl_FragColor = vec4(0.0,1.0,0.0,1.0);
+                gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);
             });
 
 #endif
@@ -332,9 +351,9 @@ int main(int argc, char* argv[])
    {
       if (strcmp(pExt,".mdl")==0)
       {
-          loadSimple(argv[argc-1],camera);
+	//loadSimple(argv[argc-1],camera);
       } else if (strcmp(pExt,".pkg")==0) {
-          loadPkg(argv[argc-1],camera);
+	//loadPkg(argv[argc-1],camera);
       }
       else
       {
@@ -346,7 +365,7 @@ int main(int argc, char* argv[])
    {
               printf("Please specify model to load \n");
    }
-   //createSurface();
+   createSurface();
    //setupTestData();
    //glColor4f(0.8f, 0.5f, 0.1f,1.0f);
    //glEnable(GL_BLEND);
@@ -397,8 +416,9 @@ int main(int argc, char* argv[])
     shader.Use();
     check();
 
-    glEnable(GL_CULL_FACE);
-    check();
+    // No culling
+    //glEnable(GL_CULL_FACE);
+    //check();
     
     GLint mvpLoc = glGetUniformLocation(shader.Program, "mvp");
     check();
@@ -425,15 +445,15 @@ int main(int argc, char* argv[])
       lastFrame = currentFrame;
 
       // Clear the colorbuffer
-      //glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
-      //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       check();
 
 
       // Bind Textures using texture units, Mesh might have loaded a new texture
-      //glActiveTexture(GL_TEXTURE0);
-      //glBindTexture(GL_TEXTURE_2D, texture1);
-      //glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, texture1);
+      glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
 
       shader.Use();
       check();
@@ -475,7 +495,7 @@ int main(int argc, char* argv[])
 
       //if (rotating)
       {
-          angleX+=0.02;
+	// angleX+=0.002;
           angleY+=0.04;
       }
 
@@ -514,7 +534,7 @@ int main(int argc, char* argv[])
 	   //glVertexAttribPointer(attr_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
            //glVertexAttribPointer(attr_color, 3, GL_FLOAT, GL_FALSE, 0, colors);
            glBindBuffer(GL_ARRAY_BUFFER, state->buf);
-           glDrawArrays(GL_TRIANGLES, 0, 6);
+           glDrawArrays(GL_TRIANGLES, 0, 12);
 	   check();
            //glDisableVertexAttribArray(attr_pos);
    	   //printf(".");
