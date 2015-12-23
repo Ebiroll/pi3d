@@ -50,17 +50,17 @@ extern void oglinit(STATE_T * state) {
 
 	eglBindAPI(EGL_OPENGL_ES_API);
         //result = eglBindAPI(EGL_OPENGL_ES_API);
-        //assert(EGL_FALSE != result);
+        assert(EGL_FALSE != result);
         //check();
 
 	
 
-	// get an appropriate EGL frame buffer configuration
+	// get an appropriate EGL2 frame buffer configuration
 	result = eglChooseConfig(state->display, attribute_list, &config, 1, &num_config);
 	assert(EGL_FALSE != result);
 
 	
-	// create an EGL rendering context
+	// create an EGL2 rendering context
 	state->context = eglCreateContext(state->display, config, EGL_NO_CONTEXT, context_attributes);
 	assert(state->context != EGL_NO_CONTEXT);
 
@@ -112,7 +112,7 @@ extern void oglinit(STATE_T * state) {
 	glClearColor(0.15f, 0.25f, 0.35f, 1.0f);
 
 	// Enable back face culling.
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 
         const char *s;
 	

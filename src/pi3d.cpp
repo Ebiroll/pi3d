@@ -92,10 +92,10 @@ GLushort  indexes[] = {0,1,2,2,3,0};
   //"attribute vec3 normal;\n"
   //"attribute vec2 tex;\n"
 
+//      "#version 100\n"
 
 const char *vs =
-      "#version 100\n"
-      "uniform mat4 mvp;\n"
+       "uniform mat4 mvp;\n"
       "attribute vec3 position;\n"
       "   varying vec2 texcoord;"
       "void main() {\n"
@@ -104,16 +104,16 @@ const char *vs =
       "}\n";
 
 //     
+//       "#version 100\n"
 
    const char *fs =
-     " precision highp float;\n"
-       " varying vec2 texcoord;\n"
-       " uniform sampler2D tex;\n"
+      " precision highp float;\n"
+      " varying vec2 texcoord;\n"
+      " uniform sampler2D tex;\n"
       "void main() {\n"
       "   //gl_FragColor = vec4(1.0,1.0,0.0,1.0);\n"
-      "   //vec3 col=texture2D(tex,texcoord).xyz;\n"
-      "	  //gl_FragColor = vec4(col,1.0);\n"
-      "   gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);"
+      "   //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);"
+      "   gl_FragColor = texture2D(tex, texcoord);\n"
       "}\n";
 
 #if 0
@@ -255,7 +255,7 @@ GLint TextureFromFile(const char* path, string directory, bool gamma)
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    //glBindTexture(GL_TEXTURE_2D, 0);
     SOIL_free_image_data(image);
     return textureID;
 }
@@ -287,8 +287,13 @@ int main(int argc, char* argv[])
 
 
    // Setup some OpenGL options
-   //glEnable(GL_DEPTH_TEST);
+   glEnable(GL_DEPTH_TEST);
 
+
+   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+   glEnable(GL_TEXTURE_2D);
+
+  
    //glEnable(GL_TEXTURE_2D);
 
 
