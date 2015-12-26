@@ -8,6 +8,11 @@ void loadSimple(char *filename,Camera &camera);
 // Loads pkg file
 int loadPkg(char *filename,Camera &camera);
 
+#define SIMPLE_HASH      2031172703
+#define BUILDING_HASH    955201417
+#define AV_MODEL_HASH    3915210767
+#define AV_CS_HASH       187990613
+#define STATIC_DECAL_HASH     1181308877
 
 /////////////////////////////////////////////
 #pragma pack(1)

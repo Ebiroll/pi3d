@@ -395,26 +395,29 @@ void printHelp(int argc, char *argv[]) {
 
 int main (int argc, char *argv[], char **env_var_ptr)
 {
-int i=0;
-int mtlIndex=0;
-char out_filename[256];
-char mdl_filename[256];
-bool skinned=false;
-bool all=false;
+    int i=0;
+    int mtlIndex=0;
+    char out_filename[256];
+    char mdl_filename[256];
+    bool skinned=false;
+    bool all=false;
 
-uint32_t hash=0;
-/*
-    vis::Hash_key key("SIMPLE");
-    hash=key;
-    printf("SIMPLE %u\n",hash);
+    uint32_t hash=0;
+
+    Hash_key simplek("AV_MODEL");
+    hash=simplek;
+    printf("AV_MODEL %u\n",hash);
 
     // Skinned types.....
 
-    vis::Hash_key key("BUILDING");
-    hash=key;
-    printf("BUILDING %u\n",hash);
+    Hash_key bkey("STATIC_DECAL");
+    hash=bkey;
+    printf("STATIC_DECAL %u\n",hash);
 
+    /*
 
+    // SIMPLE
+    // BUILDING
     // AV_MODEL
     // AV_CS
     // STATIC_DECAL

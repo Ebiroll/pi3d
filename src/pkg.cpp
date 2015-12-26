@@ -52,7 +52,7 @@ GLint TextureFromData(const unsigned char* data,unsigned int length)
     return textureID;
 }
 
-struct SlumEntry
+struct PkgEntry
 {
     char file[32];
     uint32_t size;
@@ -68,9 +68,92 @@ struct IndexVertex
     int32_t index;
 };
 
+// Custom format (mdl file)
+void loadSimpleMdl(uint8_t *data,uint32_t size)
+{
+
+    mdl_lod1Header_t *test_header=(mdl_lod1Header_t *)data;
+
+    unsigned char*read_pos=(unsigned char*) data;
+
+
+    mdl_lod1Header_t *header=(mdl_lod1Header_t *)data;
+
+
+    //if (header.nlods!=1) {
+    //    printf("Only nlods ==1 supported\n");
+    //    exit(-1);
+    //}
+
+    printf("X  %.2f - %.2f\n",header->_abb[0].x,header->_abb[1].x);
+    printf("Y  %.2f - %.2f\n",header->_abb[0].y,header->_abb[1].y);
+    printf("Z  %.2f - %.2f\n",header->_abb[0].z,header->_abb[1].z);
+
+    glm::vec3 tmp(0.0f-(header->_abb[0].x+header->_abb[1].x)/2,
+                  0.0f-(header->_abb[0].y+header->_abb[1].y)/2,
+                  0.0f-(header->_abb[0].z+header->_abb[1].z)/2);
+
+
+    read_pos+=sizeof(mdl_lod1Header_t);
+
+    printf("rend_hash=%d\n",header->render_hash);
+    printf("text_hash=%d\n",header->texture_hash);
+
+    uint32_t buffer_size;
+    buffer_size=*(uint32_t *)read_pos;
+
+    read_pos+=4;
+
+    // Part of header
+    //uint32_t texture_hash = 0;
+    //fread(&texture_hash, 4,1,file);
+    //std::shared_ptr<Texture> sp_texture = engine::texture_manager->fetch_texture(texture_hash);
+    //re_simple->texture = sp_texture->texture_id();
+
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+
+    printf("buffer size/sizeof(pixel_data) %d\n",buffer_size/sizeof(Vertex_t));
+
+    //int pos=ftell(file);
+
+    GLuint vb;
+    glGenBuffers(1, &vb);
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+    glBufferData(GL_ARRAY_BUFFER, buffer_size, read_pos, GL_STATIC_DRAW);
+
+    //fseek(file,pos + buffer_size,SEEK_SET);
+    //fread(&buffer_size, 4,1,file);
+    buffer_size=*(uint32_t *)read_pos;
+    read_pos += buffer_size/2 ;
+
+    printf("index count %d\n",mdl_index_count);
+
+    //pos=ftell(file);
+
+    GLuint ib;
+    glGenBuffers(1, &ib);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer_size,  read_pos, GL_STATIC_DRAW);
+
+    //fseek(file,pos + buffer_size,SEEK_SET);
+
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (char*)0 + 12);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (char*)0 + 24);
+
+    glBindVertexArray(0);
+
+}
+
+
 
 // Custom format (mdl file)
-void loadPkgMdl(unsigned char*read_pos,unsigned int length)
+void loadAvMdl(unsigned char*read_pos,unsigned int length)
 {
   mdl_lod1Header_t *header=(mdl_lod1Header_t *)read_pos;
 
@@ -175,7 +258,7 @@ int loadPkg(char *filename,Camera &camera)
 
 
 
-   printf("siz=%d\n",4+ my_content->n_files* sizeof(SlumEntry));
+   printf("siz=%d\n",4+ my_content->n_files* sizeof(PkgEntry));
 
    int numF=my_content->n_files;
    for (int ix=0;ix<numF;ix++)
@@ -190,10 +273,30 @@ int loadPkg(char *filename,Camera &camera)
        {
           if (strcmp(pExt,".mdl")==0)
           {
-              if (strcmp(my_content->files[ix].file,"b733.mdl")==0)
+              mdl_lod1Header_t *test=(mdl_lod1Header_t *)&data[my_content->files[ix].offset];
+              switch(test->render_hash)
               {
-                  loadPkgMdl(&data[my_content->files[ix].offset],my_content->files[ix].size);
+                 case SIMPLE_HASH:
+                    printf("SIMPLE\n");
+                    loadSimpleMdl(&data[my_content->files[ix].offset],my_content->files[ix].size);
+                  break;
+              case BUILDING_HASH:
+                 printf("BUILDING_HASH\n");
+               break;
+              case AV_MODEL_HASH:
+                 printf("AV_MODEL_HASH\n");
+                 loadAvMdl(&data[my_content->files[ix].offset],my_content->files[ix].size);
+               break;
+              case AV_CS_HASH:
+                 printf("AV_CS_HASH\n");
+               break;
+              case STATIC_DECAL_HASH:
+                 printf("STATIC_DECAL_HASH\n");
+               break;
+
+
               }
+
           }
           if (strcmp(pExt,".dds")==0)
           {
@@ -204,9 +307,6 @@ int loadPkg(char *filename,Camera &camera)
 
    return ret;
 }
-
-
-
 
 
 // Custom format (mdl file)
@@ -243,9 +343,7 @@ void loadMdl(unsigned char*read_pos,unsigned int length)
   //int pos=ftell(file);
   read_pos+=4;
 
-
   //buffer_size=*(uint32_t *)read_pos;
-
 
   GLuint vb;
   glGenBuffers(1, &vb);
@@ -273,8 +371,6 @@ void loadMdl(unsigned char*read_pos,unsigned int length)
   //fseek(file,pos + buffer_size,SEEK_SET);
   //s->seek(s->offset() + buffer_size);
 
-
-
   glEnableVertexAttribArray(0);
   glEnableVertexAttribArray(1);
   glEnableVertexAttribArray(2);
@@ -283,8 +379,6 @@ void loadMdl(unsigned char*read_pos,unsigned int length)
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (char*)0 + 24);
 
   glBindVertexArray(0);
-
-
 
 }
 
@@ -313,12 +407,6 @@ void loadSimple(char *filename,Camera &camera)
     fread(&data[0], size, 1, file);
     mdl_lod1Header_t *test_header=(mdl_lod1Header_t *)&data[0];
 
-
-    // Does not work for simple
-    //loadMdl(&data[0],size);
-
-    // This only works when nlod=1!!
-    //assert(test_header->nlods==1);
 
     fclose(file);
     file=fopen(filename, "rb");
@@ -365,7 +453,6 @@ void loadSimple(char *filename,Camera &camera)
 
     printf("buffer size/sizeof(pixel_data) %d\n",buffer_size/sizeof(Vertex_t));
 
-
     int pos=ftell(file);
 
     GLuint vb;
@@ -389,7 +476,6 @@ void loadSimple(char *filename,Camera &camera)
 
     fseek(file,pos + buffer_size,SEEK_SET);
     //s->seek(s->offset() + buffer_size);
-
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
