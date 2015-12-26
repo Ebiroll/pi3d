@@ -23,12 +23,11 @@ CHECK_INCLUDE_FILE(/opt/vc/include/bcm_host.h BCMHOST)
 
 IF(WIN32)
 ELSE(WIN32)
-set(CMAKE_CXX_FLAGS "-std=c++11 -pthread")
+set(CMAKE_CXX_FLAGS "-std=c++0x -pthread")
 #LINK_FLAGS
 #  -pthread 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined -pthread -lm")
 ENDIF(WIN32)
-
 
 
 INCLUDE_DIRECTORIES(
@@ -37,6 +36,8 @@ INCLUDE_DIRECTORIES(
   assimp/include
   glm
   soil
+  /home/olas/work/si_vis/glfw/include
+  /home/olas/work/si_vis/glew/include
 )
 
 
@@ -109,6 +110,11 @@ src/shader.h
 src/shader.cpp
 )
 
+ADD_EXECUTABLE(ass2pkg
+src/hash.cpp
+src/ass2pkg.cpp
+)
+
 
 add_subdirectory(assimp)
 #add_subdirectory(glfw)
@@ -122,8 +128,10 @@ ELSE(WIN32)
 #TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw GLEW X11 Xext) 
 #TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw /home/olof/work/pi3d/glew/lib/libGLEW.a  X11 Xext) 
 #TARGET_LINK_LIBRARIES(create assimp m GL glfw /home/olof/work/pi3d/glew/lib/libGLEW.a  X11 Xext)
-TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw GLEW  X11 Xext) 
-TARGET_LINK_LIBRARIES(create assimp m GL glfw GLEW  X11 Xext)
+TARGET_LINK_LIBRARIES(pi3d assimp m GL /home/olas/work/si_vis/glfw/build/src/libglfw3.a /home/olas/work/si_vis/glew/lib/libGLEW.a  X11 Xext Xinerama Xi Xcursor dl Xrandr GL) 
+TARGET_LINK_LIBRARIES(create assimp m GL /home/olas/work/si_vis/glfw/build/src/libglfw3.a /home/olas/work/si_vis/glew/lib/libGLEW.a  X11 Xext Xinerama Xi Xcursor dl Xrandr GL)
+TARGET_LINK_LIBRARIES(ass2pkg assimp)
+
 #TARGET_LINK_LIBRARIES(gles3d  m GL GLESv2 EGL X11)
 
 

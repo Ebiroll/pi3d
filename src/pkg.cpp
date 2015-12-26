@@ -238,7 +238,7 @@ void loadMdl(unsigned char*read_pos,unsigned int length)
 
   printf("length=%d\n",length);
 
-   exit(1);
+  // exit(1);
 
   //int pos=ftell(file);
   read_pos+=4;
@@ -314,8 +314,8 @@ void loadSimple(char *filename,Camera &camera)
     mdl_lod1Header_t *test_header=(mdl_lod1Header_t *)&data[0];
 
 
-    loadMdl(&data[0],size);
-#if 0
+    // Does not work for simple
+    //loadMdl(&data[0],size);
 
     // This only works when nlod=1!!
     //assert(test_header->nlods==1);
@@ -399,7 +399,6 @@ void loadSimple(char *filename,Camera &camera)
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (char*)0 + 24);
 
     glBindVertexArray(0);
-#endif
 
 }
 

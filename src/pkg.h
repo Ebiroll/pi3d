@@ -22,13 +22,21 @@ struct PKG_content
     } files[1];
 };
 
-
 typedef struct Vertex
 {
         float pos[3];
         float norm[3];
         float tex[2];
 } Vertex_t;
+
+
+typedef struct SkinnedVertex
+{
+    float pos[3];
+    float norm[3];
+    float tex[2];
+    int32_t index;
+} Skinned_Vertex_t;
 
 
 typedef struct Vector3
