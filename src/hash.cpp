@@ -180,7 +180,6 @@
 
 		h1 += h2; h1 += h3; h1 += h4;
 		h2 += h1; h3 += h1; h4 += h1;
-
 		hash[0] = h1;
 		hash[1] = h2;
 		hash[2] = h3;
@@ -219,6 +218,7 @@
 
 		const uint8_t* tail = (const uint8_t*)(data + nblocks * 16);
 
+	        size_t len=sizeof(uint64_t);
 		uint64_t k1 = 0;
 		uint64_t k2 = 0;
 

@@ -42,8 +42,8 @@ extern "C" {
 #include "eglstate.h"	
 }
 
-//#define check() assert(glGetError() == 0)
-#define check() assert(1==1)
+#define check() assert(glGetError() == 0)
+//#define check() assert(1==1)
 
 static STATE_T _state, *state = &_state;	// global graphics state
 
@@ -93,14 +93,17 @@ GLushort  indexes[] = {0,1,2,2,3,0};
   //"attribute vec2 tex;\n"
 
 //      "#version 100\n"
+//       " attribute vec2 vtex;\n"
 
 const char *vs =
        "uniform mat4 mvp;\n"
-      "attribute vec3 position;\n"
-      "   varying vec2 texcoord;"
+      " attribute vec3 position;\n"
+      " varying vec2 texcoord;"
       "void main() {\n"
       "   gl_Position = mvp * vec4(position, 1.0);\n"
-      "   texcoord = vec2(position.x, 1.0 - position.y);"
+      "   //texcoord = vec2(position.x , position.y)  + vec2(0.5);\n"
+      "   texcoord = vec2(position.x, 1.0 - position.y);\n"
+      "   //texcoord = vec2(vtex.x, 1.0 - vtex.y);\n"
       "}\n";
 
 //     
@@ -111,9 +114,12 @@ const char *vs =
       " varying vec2 texcoord;\n"
       " uniform sampler2D tex;\n"
       "void main() {\n"
-      "   //gl_FragColor = vec4(1.0,1.0,0.0,1.0);\n"
-      "   //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);"
-      "   gl_FragColor = texture2D(tex, texcoord);\n"
+      "   //vec2 coord;\n"
+      "   gl_FragColor = vec4(1.0,1.0,0.0,1.0);\n"
+      "   //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);\n"
+      "   //coord.x=clamp(texcoord.x/10.0,0.0,1.0);\n"
+      "   //coord.y=clamp(texcoord.y/10.0,0.0,1.0);\n"
+      "   //gl_FragColor = texture2D(tex, coord);\n"
       "}\n";
 
 #if 0
@@ -226,7 +232,7 @@ void printHelp(int argc, char *argv[]) {
 }
 
 
-void loadSimple(char *filename,Camera &camera);
+GLuint loadSimple(char *filename,Camera &camera);
 
 
 GLint TextureFromFile(const char* path, string directory, bool gamma)
@@ -249,14 +255,21 @@ GLint TextureFromFile(const char* path, string directory, bool gamma)
     //glTexImage2D(GL_TEXTURE_2D, 0, gamma ? GL_SRGB : GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     glGenerateMipmap(GL_TEXTURE_2D);
+    check();
 
     // Parameters
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+    check();
+
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     //glBindTexture(GL_TEXTURE_2D, 0);
     SOIL_free_image_data(image);
+
+    check();
+
+
     return textureID;
 }
 
@@ -285,13 +298,17 @@ int main(int argc, char* argv[])
       printHelp(argc,argv);
   }
 
+  check();
+
 
    // Setup some OpenGL options
    glEnable(GL_DEPTH_TEST);
+   check();
 
 
-   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-   glEnable(GL_TEXTURE_2D);
+   //glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+   //glEnable(GL_TEXTURE_2D);
+   check();
 
   
    //glEnable(GL_TEXTURE_2D);
@@ -325,19 +342,25 @@ int main(int argc, char* argv[])
    sprintf(fragment_shader,"%s.frag",shader_base);
    sprintf(geometry_shader,"%s.geom",shader_base);
 
+   check();
 
    // Setup and compile our shaders
    Shader shader(vertex_shader, fragment_shader,geometry_shader);
    //Shader shader("shader.vert", "shader.frag");
+   check();
 
 
    // This binds the attrib opengl 2.1 stuff
 
    shader.linkProg();
    shader.Use();
+   check();
 
    state->attr_position = glGetAttribLocation(shader.Program, "position");
    check();   
+   //state->attr_vtex = glGetAttribLocation(shader.Program, "vtex");
+   //check();
+
    //glBindAttribLocation (shader.Program, attr_pos , "position");
    // check();
    
@@ -356,19 +379,21 @@ int main(int argc, char* argv[])
    {
       if (strcmp(pExt,".mdl")==0)
       {
-	//loadSimple(argv[argc-1],camera);
+         //state->buf=loadSimple(argv[argc-1],camera);
+         check();
       } else if (strcmp(pExt,".pkg")==0) {
-	//loadPkg(argv[argc-1],camera);
+         //loadPkg(argv[argc-1],camera);
       }
       else
       {
-	// mesh = new Mesh(argv[argc-1]);
+         // mesh = new Mesh(argv[argc-1]);
       }
 
    }
    else
    {
               printf("Please specify model to load \n");
+              //exit();
    }
    createSurface();
    //setupTestData();
@@ -376,7 +401,12 @@ int main(int argc, char* argv[])
    //glEnable(GL_BLEND);
    //glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
-   
+   printf("index count %d\n",mdl_index_count);
+   check();
+
+
+
+
    float time=0.0f;
 #ifdef _X11_XLIB_H_
    Display *XDisplay;
@@ -500,8 +530,8 @@ int main(int argc, char* argv[])
 
       //if (rotating)
       {
-	// angleX+=0.002;
-          angleY+=0.04;
+        // angleX+=0.002;
+          angleY+=0.004;
       }
 
       model = glm::rotate(model, angleX, glm::vec3(1.0f, 0.0f, 0.1f));
@@ -515,38 +545,37 @@ int main(int argc, char* argv[])
       glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
       check();
       
-      //printf("+\n");
+      //printf("+texture--%d\n",texture1);
       
       if (mdl_index_count>0)
       {
           // Draw mdl :-P
-          //glBindMultiTextureEXT(GL_TEXTURE0, GL_TEXTURE_2D, texture1);
-          //glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
-          //glActiveTexture(GL_TEXTURE0);
-          //glBindTexture(GL_TEXTURE_2D, texture1);
           //glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);  // Texture unit 0 is for base images.
 
           // OLAS HERE!!  glBindVertexArrayOES(VAO);
-	  // glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
+          // glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
 
-	   //glEnableClientState( GL_VERTEX_ARRAY );
+          //glEnableClientState( GL_VERTEX_ARRAY );
+          check();
+
            //glBindBuffer(GL_ARRAY_BUFFER, state->buf);
-	
-           glVertexAttribPointer(state->attr_position, 3, GL_FLOAT, 0, 12, 0);
-	   check();
-           //glVertexAttribPointer(state->attr_position, 3, GL_FLOAT, GL_FALSE, 0, vertices);
-	   check();
-	   //glVertexAttribPointer(attr_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
-           //glVertexAttribPointer(attr_color, 3, GL_FLOAT, GL_FALSE, 0, colors);
            glBindBuffer(GL_ARRAY_BUFFER, state->buf);
+           glEnableVertexAttribArray(state->buf);
+           glVertexAttribPointer(state->attr_position, 3, GL_FLOAT, GL_FALSE, 0 /*12*/, 0);
+           check();
+           //glVertexAttribPointer(state->attr_position, 3, GL_FLOAT, GL_FALSE, 0, vertices);
+           //check();
+
            glDrawArrays(GL_TRIANGLES, 0, 12);
-	   check();
+
+           //glBindVertexArray(VAO);
+           //glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
+
+           check();
            //glDisableVertexAttribArray(attr_pos);
    	   //printf(".");
       }
 
-      //if (mesh) mesh->render(shader.Program);
-      //glfwSwapBuffers(window);
       eglSwapBuffers(state->display,state->surface);
 }
 

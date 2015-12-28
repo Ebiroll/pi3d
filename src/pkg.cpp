@@ -280,20 +280,19 @@ int loadPkg(char *filename,Camera &camera)
                     printf("SIMPLE\n");
                     loadSimpleMdl(&data[my_content->files[ix].offset],my_content->files[ix].size);
                   break;
-              case BUILDING_HASH:
-                 printf("BUILDING_HASH\n");
-               break;
-              case AV_MODEL_HASH:
-                 printf("AV_MODEL_HASH\n");
-                 loadAvMdl(&data[my_content->files[ix].offset],my_content->files[ix].size);
-               break;
-              case AV_CS_HASH:
-                 printf("AV_CS_HASH\n");
-               break;
-              case STATIC_DECAL_HASH:
-                 printf("STATIC_DECAL_HASH\n");
-               break;
-
+                  case BUILDING_HASH:
+                    printf("BUILDING_HASH\n");
+                  break;
+                  case AV_MODEL_HASH:
+                    printf("AV_MODEL_HASH\n");
+                    loadAvMdl(&data[my_content->files[ix].offset],my_content->files[ix].size);
+                  break;
+                  case AV_CS_HASH:
+                   printf("AV_CS_HASH\n");
+                 break;
+                 case STATIC_DECAL_HASH:
+                   printf("STATIC_DECAL_HASH\n");
+                 break;
 
               }
 
@@ -385,7 +384,7 @@ void loadMdl(unsigned char*read_pos,unsigned int length)
 
 
 // Custom format (mdl file)
-void loadSimple(char *filename,Camera &camera)
+GLuint loadSimple(char *filename,Camera &camera)
 {
 
     //std::string totfilename=std::string(filename);
@@ -486,5 +485,6 @@ void loadSimple(char *filename,Camera &camera)
 
     glBindVertexArray(0);
 
+    return ib;
 }
 

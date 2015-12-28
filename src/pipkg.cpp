@@ -31,7 +31,7 @@ using std::string;
 
 //#include "GLES2/gl2ext.h"
 
-#include "pipkg.h"
+#include "pkg.h"
 
 extern GLuint VBO, VAO;
 extern int mdl_index_count;
@@ -309,7 +309,7 @@ void loadMdl(unsigned char*read_pos,unsigned int length)
 
 
 // Custom format (mdl file)
-void loadSimple(char *filename,Camera &camera)
+GLuint loadSimple(char *filename,Camera &camera)
 {
 
     //std::string totfilename=std::string(filename);
@@ -332,8 +332,8 @@ void loadSimple(char *filename,Camera &camera)
     mdl_lod1Header_t *test_header=(mdl_lod1Header_t *)&data[0];
 
 
-    loadMdl(&data[0],size);
-#if 0
+    //loadMdl(&data[0],size);
+
 
     // This only works when nlod=1!!
     //assert(test_header->nlods==1);
@@ -383,41 +383,62 @@ void loadSimple(char *filename,Camera &camera)
 
     printf("buffer size/sizeof(pixel_data) %d\n",buffer_size/sizeof(Vertex_t));
 
+    int numVertexes=buffer_size/sizeof(Vertex_t);
 
     int pos=ftell(file);
 
     GLuint vb;
     glGenBuffers(1, &vb);
     glBindBuffer(GL_ARRAY_BUFFER, vb);
-    glBufferData(GL_ARRAY_BUFFER, buffer_size, &data[pos], GL_STATIC_DRAW);
 
     fseek(file,pos + buffer_size,SEEK_SET);
     fread(&buffer_size, 4,1,file);
 
     mdl_index_count = buffer_size/2 ;
+    numVertexes=mdl_index_count;
 
     printf("index count %d\n",mdl_index_count);
 
-    pos=ftell(file);
+    int pos_indexes=ftell(file);
 
-    GLuint ib;
-    glGenBuffers(1, &ib);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer_size,  &data[pos], GL_STATIC_DRAW);
 
-    fseek(file,pos + buffer_size,SEEK_SET);
+    float *buff_data= (float *)malloc(sizeof(float)*3*numVertexes);
+
+    Vertex_t *ptr= (Vertex_t *) &data[pos];
+    unsigned short int *indexes = (unsigned short int *) &data[pos_indexes];
+    for (int j=0;j<(mdl_index_count*3);j+=3)
+    {
+        printf("%d,",*indexes/3);
+        int myix=*indexes;
+        printf("X,Y,Z U,V = %.2f , %.2f , %.2f     %.2f,%.2f\n",ptr[myix].pos[0],ptr[myix].pos[1],ptr[myix].pos[2],ptr[myix].tex[0],ptr[myix].tex[1]);
+        buff_data[j]=ptr[myix].pos[0];
+        buff_data[j+1]=ptr[myix].pos[1];
+        buff_data[j+2]=ptr[myix].pos[2];
+        //buff_data[j+3]=ptr[myix].tex[0];
+        //buff_data[j+4]=ptr[myix].tex[1];
+
+        indexes++;
+    }
+
+    glBufferData(GL_ARRAY_BUFFER, numVertexes*4*3, buff_data, GL_STATIC_DRAW);
+
+
+    //GLuint ib;
+    //glGenBuffers(1, &ib);
+    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib);
+    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer_size,  &data[pos], GL_STATIC_DRAW);
+
+    //fseek(file,pos + buffer_size,SEEK_SET);
     //s->seek(s->offset() + buffer_size);
 
 
     glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (char*)0 + 12);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (char*)0 + 24);
+    //glEnableVertexAttribArray(1);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), 0);
+    //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (char*)0 + 12);
 
     //glBindVertexArrayOES(0);
-#endif
+    return vb;
 
 }
 

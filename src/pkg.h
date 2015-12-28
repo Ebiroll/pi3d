@@ -3,7 +3,7 @@
 #include "camera.h"
 
 // Loads mdl file
-void loadSimple(char *filename,Camera &camera);
+GLuint loadSimple(char *filename,Camera &camera);
 
 // Loads pkg file
 int loadPkg(char *filename,Camera &camera);
