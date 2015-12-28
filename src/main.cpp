@@ -148,7 +148,7 @@ void printHelp(int argc, char *argv[]) {
 }
 
 
-void loadSimple(char *filename,Camera &camera);
+//void loadSimple(char *filename,Camera &camera);
 
 
 int main(int argc, char* argv[])

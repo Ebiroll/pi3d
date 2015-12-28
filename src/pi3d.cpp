@@ -93,17 +93,19 @@ GLushort  indexes[] = {0,1,2,2,3,0};
   //"attribute vec2 tex;\n"
 
 //      "#version 100\n"
-//       " attribute vec2 vtex;\n"
+//       "   //texcoord = vec2(vtex.x, 1.0 - vtex.y);\n"
 
 const char *vs =
-       "uniform mat4 mvp;\n"
+      "precision highp float;\n"
+      "uniform mat4 mvp;\n"
       " attribute vec3 position;\n"
-      " varying vec2 texcoord;"
+      " attribute vec2 vtex;\n"
+      " varying vec2 texcoord;\n"
       "void main() {\n"
       "   gl_Position = mvp * vec4(position, 1.0);\n"
       "   //texcoord = vec2(position.x , position.y)  + vec2(0.5);\n"
-      "   texcoord = vec2(position.x, 1.0 - position.y);\n"
-      "   //texcoord = vec2(vtex.x, 1.0 - vtex.y);\n"
+      "   //texcoord = vec2(position.x, 1.0 - position.y);\n"
+      "   texcoord = vec2(vtex.x, 1.0 - vtex.y);\n"
       "}\n";
 
 //     
@@ -114,12 +116,12 @@ const char *vs =
       " varying vec2 texcoord;\n"
       " uniform sampler2D tex;\n"
       "void main() {\n"
-      "   //vec2 coord;\n"
-      "   gl_FragColor = vec4(1.0,1.0,0.0,1.0);\n"
+      "   vec2 coord;\n"
+      "   //gl_FragColor = vec4(1.0,1.0,0.0,1.0);\n"
       "   //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);\n"
-      "   //coord.x=clamp(texcoord.x/10.0,0.0,1.0);\n"
-      "   //coord.y=clamp(texcoord.y/10.0,0.0,1.0);\n"
-      "   //gl_FragColor = texture2D(tex, coord);\n"
+      "   coord.x=clamp(texcoord.x,0.0,1.0);\n"
+      "   coord.y=clamp(texcoord.y,0.0,1.0);\n"
+      "   gl_FragColor = texture2D(tex, coord);\n"
       "}\n";
 
 #if 0
@@ -358,15 +360,15 @@ int main(int argc, char* argv[])
 
    state->attr_position = glGetAttribLocation(shader.Program, "position");
    check();   
-   //state->attr_vtex = glGetAttribLocation(shader.Program, "vtex");
-   //check();
+   GLuint  vtex_position= glGetAttribLocation(shader.Program, "vtex");
+   check();
 
    //glBindAttribLocation (shader.Program, attr_pos , "position");
    // check();
    
-   //glBindAttribLocation (shader.Program, 1, "normal");
-   //glBindAttribLocation (shader.Program, 2, "vtex");
-   //glBindAttribLocation (shader.Program, 3, "index");
+   // Opengl 2.1
+   glBindAttribLocation (shader.Program, 0, "position");
+   glBindAttribLocation (shader.Program, 1, "vtex");
 
    // glBindAttribLocation(program, 0, "pos");
    
@@ -379,7 +381,7 @@ int main(int argc, char* argv[])
    {
       if (strcmp(pExt,".mdl")==0)
       {
-         //state->buf=loadSimple(argv[argc-1],camera);
+         state->buf=loadSimple(argv[argc-1],camera);
          check();
       } else if (strcmp(pExt,".pkg")==0) {
          //loadPkg(argv[argc-1],camera);
@@ -393,9 +395,9 @@ int main(int argc, char* argv[])
    else
    {
               printf("Please specify model to load \n");
+              createSurface();
               //exit();
    }
-   createSurface();
    //setupTestData();
    //glColor4f(0.8f, 0.5f, 0.1f,1.0f);
    //glEnable(GL_BLEND);
@@ -530,7 +532,7 @@ int main(int argc, char* argv[])
 
       //if (rotating)
       {
-        // angleX+=0.002;
+          angleX+=0.0002;
           angleY+=0.004;
       }
 
@@ -558,15 +560,14 @@ int main(int argc, char* argv[])
           //glEnableClientState( GL_VERTEX_ARRAY );
           check();
 
-           //glBindBuffer(GL_ARRAY_BUFFER, state->buf);
-           glBindBuffer(GL_ARRAY_BUFFER, state->buf);
-           glEnableVertexAttribArray(state->buf);
-           glVertexAttribPointer(state->attr_position, 3, GL_FLOAT, GL_FALSE, 0 /*12*/, 0);
-           check();
-           //glVertexAttribPointer(state->attr_position, 3, GL_FLOAT, GL_FALSE, 0, vertices);
-           //check();
+          glBindBuffer(GL_ARRAY_BUFFER, state->buf);
+          //glEnableVertexAttribArray(0);
+          //check();
 
-           glDrawArrays(GL_TRIANGLES, 0, 12);
+          //glEnableVertexAttribArray(1);
+          //check();
+
+          glDrawArrays(GL_TRIANGLES, 0, 3*mdl_index_count);
 
            //glBindVertexArray(VAO);
            //glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);

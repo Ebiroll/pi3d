@@ -58,33 +58,12 @@ soil/SOIL.c
 soil/stb_image_aug.h
 )
 
-#ADD_EXECUTABLE(pi3d
-#${SOIL_SRC}
-#src/Mesh.cpp
-#src/main.cpp
-#src/pkg.cpp
-#src/Mesh.h
-#src/shader.frag
-#src/shader.vert
-#src/normal.frag
-#src/normal.vert
-#src/normal.geom
-#src/shader.h
-#src/shader.cpp
-#)
-
-
-# Test GLES
-add_definitions(-DHAVEGLES -DHAVEGLES)
-
-
-ADD_EXECUTABLE(gles3d
+ADD_EXECUTABLE(pi3d
 ${SOIL_SRC}
-src/pi3d.cpp
-src/pipkg.cpp
-src/eglstate.h
-src/camera.h
-src/eglinit.c
+src/Mesh.cpp
+src/main.cpp
+src/pkg.cpp
+src/Mesh.h
 src/shader.frag
 src/shader.vert
 src/normal.frag
@@ -95,12 +74,17 @@ src/shader.cpp
 )
 
 
-#ADD_EXECUTABLE(create
+# Test GLES
+#add_definitions(-DHAVEGLES -DHAVEGLES)
+
+
+#ADD_EXECUTABLE(gles3d
 #${SOIL_SRC}
-#src/Mesh.cpp
-#src/create.cpp
-#src/pkg.cpp
-#src/Mesh.h
+#src/pi3d.cpp
+#src/pipkg.cpp
+#src/eglstate.h
+#src/camera.h
+#src/eglinit.c
 #src/shader.frag
 #src/shader.vert
 #src/normal.frag
@@ -109,6 +93,22 @@ src/shader.cpp
 #src/shader.h
 #src/shader.cpp
 #)
+
+
+ADD_EXECUTABLE(create
+${SOIL_SRC}
+src/Mesh.cpp
+src/create.cpp
+src/pkg.cpp
+src/Mesh.h
+src/shader.frag
+src/shader.vert
+src/normal.frag
+src/normal.vert
+src/normal.geom
+src/shader.h
+src/shader.cpp
+)
 
 ADD_EXECUTABLE(ass2pkg
 src/hash.cpp
@@ -125,15 +125,15 @@ add_subdirectory(assimp)
 IF(WIN32)
 TARGET_LINK_LIBRARIES(pi3d opengl32 glfw X11 Xext) 
 ELSE(WIN32)
-#TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw GLEW X11 Xext)
+TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw GLEW X11 Xext)
 #TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw /home/olof/work/pi3d/glew/lib/libGLEW.a  X11 Xext) 
 #TARGET_LINK_LIBRARIES(create assimp m GL glfw /home/olof/work/pi3d/glew/lib/libGLEW.a  X11 Xext)
-#TARGET_LINK_LIBRARIES(create assimp m GL glfw GLEW  X11 Xext)
+TARGET_LINK_LIBRARIES(create assimp m GL glfw GLEW  X11 Xext)
 #TARGET_LINK_LIBRARIES(pi3d assimp m GL /home/olas/work/si_vis/glfw/build/src/libglfw3.a /home/olas/work/si_vis/glew/lib/libGLEW.a  X11 Xext Xinerama Xi Xcursor dl Xrandr GL) 
 #TARGET_LINK_LIBRARIES(create assimp m GL /home/olas/work/si_vis/glfw/build/src/libglfw3.a /home/olas/work/si_vis/glew/lib/libGLEW.a  X11 Xext Xinerama Xi Xcursor dl Xrandr GL)
 TARGET_LINK_LIBRARIES(ass2pkg assimp)
 
-TARGET_LINK_LIBRARIES(gles3d  m GL GLESv2 EGL X11)
+#TARGET_LINK_LIBRARIES(gles3d  m GL GLESv2 EGL X11)
 
 
 ENDIF(WIN32)

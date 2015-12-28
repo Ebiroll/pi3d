@@ -334,7 +334,6 @@ GLuint loadSimple(char *filename,Camera &camera)
 
     //loadMdl(&data[0],size);
 
-
     // This only works when nlod=1!!
     //assert(test_header->nlods==1);
 
@@ -402,11 +401,11 @@ GLuint loadSimple(char *filename,Camera &camera)
     int pos_indexes=ftell(file);
 
 
-    float *buff_data= (float *)malloc(sizeof(float)*3*numVertexes);
+    float *buff_data= (float *)malloc(sizeof(float)*5*numVertexes);
 
     Vertex_t *ptr= (Vertex_t *) &data[pos];
     unsigned short int *indexes = (unsigned short int *) &data[pos_indexes];
-    for (int j=0;j<(mdl_index_count*3);j+=3)
+    for (int j=0;j<(mdl_index_count*5);j+=5)
     {
         printf("%d,",*indexes/3);
         int myix=*indexes;
@@ -414,13 +413,13 @@ GLuint loadSimple(char *filename,Camera &camera)
         buff_data[j]=ptr[myix].pos[0];
         buff_data[j+1]=ptr[myix].pos[1];
         buff_data[j+2]=ptr[myix].pos[2];
-        //buff_data[j+3]=ptr[myix].tex[0];
-        //buff_data[j+4]=ptr[myix].tex[1];
+        buff_data[j+3]=ptr[myix].tex[0];
+        buff_data[j+4]=ptr[myix].tex[1];
 
         indexes++;
     }
 
-    glBufferData(GL_ARRAY_BUFFER, numVertexes*4*3, buff_data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (numVertexes*sizeof(float)*5), buff_data, GL_STATIC_DRAW);
 
 
     //GLuint ib;
@@ -431,11 +430,11 @@ GLuint loadSimple(char *filename,Camera &camera)
     //fseek(file,pos + buffer_size,SEEK_SET);
     //s->seek(s->offset() + buffer_size);
 
-
     glEnableVertexAttribArray(0);
-    //glEnableVertexAttribArray(1);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), 0);
-    //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (char*)0 + 12);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), 0);
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (char*)0 + 3*sizeof(float));
 
     //glBindVertexArrayOES(0);
     return vb;

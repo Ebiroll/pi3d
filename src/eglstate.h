@@ -7,7 +7,7 @@ typedef struct {
 #ifdef HAVEGLES
         GLuint buf;
         GLuint attr_position;
-        GLuint attr_vtex;
+        //GLuint attr_vtex;
 	EGLDisplay display;
 	EGLSurface surface;
 	EGLContext context;
