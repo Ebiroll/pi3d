@@ -94,13 +94,14 @@ GLushort  indexes[] = {0,1,2,2,3,0};
 
 //      "#version 100\n"
 //       "   //texcoord = vec2(vtex.x, 1.0 - vtex.y);\n"
+//      "precision highp float;\n"
+
 
 const char *vs =
-      "precision highp float;\n"
       "uniform mat4 mvp;\n"
       " attribute vec3 position;\n"
       " attribute vec2 vtex;\n"
-      " varying vec2 texcoord;\n"
+       " varying vec2 texcoord;\n"
       "void main() {\n"
       "   gl_Position = mvp * vec4(position, 1.0);\n"
       "   //texcoord = vec2(position.x , position.y)  + vec2(0.5);\n"
@@ -116,13 +117,13 @@ const char *vs =
       " varying vec2 texcoord;\n"
       " uniform sampler2D tex;\n"
       "void main() {\n"
-      "   vec2 coord;\n"
-      "   //gl_FragColor = vec4(1.0,1.0,0.0,1.0);\n"
+      "   //vec2 coord;\n"
+      "   gl_FragColor = vec4(1.0,1.0,0.0,1.0);\n"
+      "   //coord.x=clamp(texcoord.x,0.0,1.0);\n"
+      "   //coord.y=clamp(texcoord.y,0.0,1.0);\n"
+      "   //gl_FragColor = texture2D(tex, coord);\n"
       "   //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);\n"
-      "   coord.x=clamp(texcoord.x,0.0,1.0);\n"
-      "   coord.y=clamp(texcoord.y,0.0,1.0);\n"
-      "   gl_FragColor = texture2D(tex, coord);\n"
-      "}\n";
+       "}\n";
 
 #if 0
 const char* vs = GLSL(
@@ -308,7 +309,7 @@ int main(int argc, char* argv[])
    check();
 
 
-   //glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
    //glEnable(GL_TEXTURE_2D);
    check();
 
@@ -532,8 +533,8 @@ int main(int argc, char* argv[])
 
       //if (rotating)
       {
-          angleX+=0.0002;
-          angleY+=0.004;
+          angleX+=0.002;
+          angleY+=0.04;
       }
 
       model = glm::rotate(model, angleX, glm::vec3(1.0f, 0.0f, 0.1f));
@@ -557,7 +558,7 @@ int main(int argc, char* argv[])
           // OLAS HERE!!  glBindVertexArrayOES(VAO);
           // glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
 
-          //glEnableClientState( GL_VERTEX_ARRAY );
+          glEnableClientState( GL_VERTEX_ARRAY );
           check();
 
           glBindBuffer(GL_ARRAY_BUFFER, state->buf);
@@ -567,14 +568,15 @@ int main(int argc, char* argv[])
           //glEnableVertexAttribArray(1);
           //check();
 
-          glDrawArrays(GL_TRIANGLES, 0, 3*mdl_index_count);
+          //glDrawArrays(GL_TRIANGLES, 0, mdl_index_count);
+          glDrawArrays(GL_TRIANGLES, 0, 36);
 
            //glBindVertexArray(VAO);
            //glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
 
            check();
            //glDisableVertexAttribArray(attr_pos);
-   	   //printf(".");
+	   // printf(".");
       }
 
       eglSwapBuffers(state->display,state->surface);
