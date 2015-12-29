@@ -1,3 +1,5 @@
+#define HAVEGLES 1
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -5,7 +7,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "SOIL.h"
-#include "pipkg.h"
+#include "pkg.h"
 #include <string>
 #include <vector>
 #include "SOIL.h"
@@ -38,9 +40,6 @@ using std::string;
 #ifdef BCMHOST
 #include "bcm_host.h"
 #endif
-extern "C" {
-#include "eglstate.h"	
-}
 
 #define check() assert(glGetError() == 0)
 //#define check() assert(1==1)
@@ -62,18 +61,29 @@ static STATE_T _state, *state = &_state;	// global graphics state
 
 float vertices[] = {
      -5.0f,  -5.0f, 0.0f , // Vertex 0 (X, Y, Z)
+     0.0f,0.0f,           // uv
      5.0f, -5.0f, 0.0f , // Vertex 1 (X, Y, Z)
+     1.0f,1.0f,           // uv
      5.0f, 5.0f, 0.0f,   // Vertex 2 (X, Y ,Z)
+    1.0f,0.5f,           // uv
      5.0f, 5.0f, 0.0f,   // Vertex 3 (X, Y ,Z)
+    1.0f,1.0f,           // uv
      -5.0f,  5.0f, 0.0f , // Vertex 4 (X, Y, Z)
+    1.0f,0.0f,           // uv
      -5.0f, -5.0f, 0.0f,   // Vertex 5 (X, Y ,Z)
 
-     -10.0f,  -10.0f, -10.0f , // Vertex 0 (X, Y, Z)
-     10.0f, -10.0f, -10.0f , // Vertex 1 (X, Y, Z)
-     10.0f, 10.0f, -10.0f,   // Vertex 2 (X, Y ,Z)
-     10.0f, 10.0f, -10.0f,   // Vertex 3 (X, Y ,Z)
-     -10.0f,  10.0f, -10.0f , // Vertex 4 (X, Y, Z)
-     -10.0f, -10.0f, -10.0f   // Vertex 5 (X, Y ,Z)
+     -10.0f,  -10.0f, -10.0f , // Vertex 6 (X, Y, Z)
+    1.0f,0.0f,           // uv
+     10.0f, -10.0f, -10.0f , // Vertex 7 (X, Y, Z)
+    1.0f,1.0f,           // uv
+     10.0f, 10.0f, -10.0f,   // Vertex 8 (X, Y ,Z)
+    1.0f,1.0f,           // uv
+     10.0f, 10.0f, -10.0f,   // Vertex 9 (X, Y ,Z)
+    1.0f,0.0f,           // uv
+     -10.0f,  10.0f, -10.0f , // Vertex 10 (X, Y, Z)
+    1.0f,1.0f,           // uv
+     -10.0f, -10.0f, -10.0f ,  // Vertex 11 (X, Y ,Z)
+    1.0f,1.0f,           // uv
 
 };
 
@@ -119,10 +129,10 @@ const char *vs =
       "void main() {\n"
       "   vec2 coord;\n"
       "   //gl_FragColor = vec4(1.0,1.0,0.0,1.0);\n"
+      "   //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);\n"
       "   coord.x=clamp(texcoord.x,0.0,1.0);\n"
       "   coord.y=clamp(texcoord.y,0.0,1.0);\n"
       "   gl_FragColor = texture2D(tex, coord);\n"
-      "   //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);\n"
        "}\n";
 
 #if 0
@@ -139,8 +149,8 @@ const char* vs = GLSL(
 
         void main()
         {
-	     //gl_Position = projection * view * model * vec4(position, 1.0);
-	    gl_Position = vec4(position, 1.0);
+            //gl_Position = projection * view * model * vec4(position, 1.0);
+            gl_Position = vec4(position, 1.0);
             //texcoord = vec2(vtex.x , vtex.y)  + vec2(0.5);
             //texcoord  =  vtex;
             texcoord = vec2(vtex.x, 1.0 - vtex.y);
@@ -200,24 +210,69 @@ bool rotating=true;
 
 void createSurface()
 {
+    /*
     //GLuint vb;
    glGenBuffers(1, &state->buf);
    check();
    glBindBuffer(GL_ARRAY_BUFFER, state->buf);
    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);  
    check();
-   glVertexAttribPointer(state->attr_position, 3, GL_FLOAT, 0, 12, 0);
+   //glVertexAttribPointer(state->attr_position, 3, GL_FLOAT, 0, 12, 0);
    check();
-   glEnableVertexAttribArray(state->attr_position);
+   //glEnableVertexAttribArray(state->attr_position);
+   glEnableVertexAttribArray(0);
    check();
+
+   glVertexAttribPointer(0, 3, GL_FLOAT, 0, 18, 0);
+   check();
+   glVertexAttribPointer(1, 2, GL_FLOAT, 0, 18, 0);
+   check();
+
    //GLuint ib;
    //glGenBuffers(1, &ib);
    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib);
    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexes), &indexes[0], GL_STATIC_DRAW);
-   mdl_index_count=12;
+
+   */
+
+    int numVertexes=1+sizeof(vertices)/(5*sizeof(float));
+    printf("Create surface %d\n",numVertexes);
+
+    float *buff_data= (float *)malloc(sizeof(float)*3*numVertexes);
+    float *uv_data= (float *)malloc(sizeof(float)*2*numVertexes);
+
+    Vertex_t *ptr= (Vertex_t *) &vertices[0];
+    for (int j=0;j<(mdl_index_count*3);j+=3)
+    {
+        int myix=j/3;
+        printf("X,Y,Z U,V = %.2f , %.2f , %.2f     %.2f,%.2f\n",ptr[myix].pos[0],ptr[myix].pos[1],ptr[myix].pos[2],ptr[myix].tex[0],ptr[myix].tex[1]);
+        buff_data[j]=ptr[myix].pos[0];
+        buff_data[j+1]=ptr[myix].pos[1];
+        buff_data[j+2]=ptr[myix].pos[2];
+
+    }
+
+    for (int j=0;j<(mdl_index_count*2);j+=2)
+    {
+        int myix=j/2;
+        uv_data[j]=ptr[myix].tex[0];
+        uv_data[j+1]=ptr[myix].tex[1];
+    }
+
+    glGenBuffers(1, &state->buf);
+    glBindBuffer(GL_ARRAY_BUFFER, state->buf);
+    glBufferData(GL_ARRAY_BUFFER, (numVertexes*sizeof(float)*3), buff_data, GL_STATIC_DRAW);
+    check();
+
+    glGenBuffers(1, &state->uvbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, state->uvbuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*2*numVertexes, uv_data, GL_STATIC_DRAW);
+    check();
 
 
-   //glEnableVertexAttribArray(0);
+    mdl_index_count=12;
+
+
 
 }
 
@@ -235,7 +290,7 @@ void printHelp(int argc, char *argv[]) {
 }
 
 
-GLuint loadSimple(char *filename,Camera &camera);
+//GLuint loadSimple(char *filename,Camera &camera,STATE_T* state);
 
 
 GLint TextureFromFile(const char* path, string directory, bool gamma)
@@ -361,7 +416,7 @@ int main(int argc, char* argv[])
 
    state->attr_position = glGetAttribLocation(shader.Program, "position");
    check();   
-   GLuint  vtex_position= glGetAttribLocation(shader.Program, "vtex");
+   state->attr_vtex= glGetAttribLocation(shader.Program, "vtex");
    check();
 
    //glBindAttribLocation (shader.Program, attr_pos , "position");
@@ -382,7 +437,7 @@ int main(int argc, char* argv[])
    {
       if (strcmp(pExt,".mdl")==0)
       {
-         state->buf=loadSimple(argv[argc-1],camera);
+         state->buf=loadSimple(argv[argc-1],camera,state);
          check();
       } else if (strcmp(pExt,".pkg")==0) {
          //loadPkg(argv[argc-1],camera);
@@ -408,47 +463,7 @@ int main(int argc, char* argv[])
    check();
 
 
-
-
    float time=0.0f;
-#ifdef _X11_XLIB_H_
-   Display *XDisplay;
-
-   XDisplay = XOpenDisplay(NULL);
-   if (!XDisplay) {
-       fprintf(stderr, "Error: failed to open X display.\n");
-       return -1;
-   }
-
-   Atom XWMDeleteMessage =
-       XInternAtom(XDisplay, "WM_DELETE_WINDOW", False);
-
-
-    while (0) {
-
-        XEvent event;
-
-        XNextEvent(XDisplay, &event);
-
-        if ((event.type == MotionNotify) ||
-            (event.type == Expose))
-        {
-            printf(".\n");
-            glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            //glBindBuffer(GL_ARRAY_BUFFER, state->buf);
-            //glDrawArrays( GL_TRIANGLES, 0, 3);
-            //eglSwapBuffers(state->display,state->surface);
-
-            //Redraw(state->screen_width, state->screen_height);
-        }
-        else if (event.type == ClientMessage) {
-            if (event.xclient.data.l[0] == XWMDeleteMessage)
-                break;
-        }
-    }
-    //XSetWMProtocols(XDisplay, XWindow, &XWMDeleteMessage, 0);
-#endif
 
 
     shader.Use();
@@ -561,21 +576,41 @@ int main(int argc, char* argv[])
           glEnableClientState( GL_VERTEX_ARRAY );
           check();
 #endif
+          glEnableVertexAttribArray(state->attr_position);
           glBindBuffer(GL_ARRAY_BUFFER, state->buf);
-          //glEnableVertexAttribArray(0);
-          //check();
+          check();
+          glVertexAttribPointer(
+          state->attr_position, // The attribute we want to configure
+          3, // size : X+Y+Z => 3
+          GL_FLOAT, // type
+          GL_FALSE, // normalized?
+          0, // stride
+          (void*)0 // array buffer offset
+          );
+          check();
 
-          //glEnableVertexAttribArray(1);
-          //check();
 
-          //glDrawArrays(GL_TRIANGLES, 0, mdl_index_count);
+
+          glEnableVertexAttribArray(state->attr_vtex);
+          glBindBuffer(GL_ARRAY_BUFFER, state->uvbuffer);
+          glVertexAttribPointer(
+          state->attr_vtex, // The attribute we want to configure
+          2, // size : U+V => 2
+          GL_FLOAT, // type
+          GL_FALSE, // normalized?
+          0, // stride
+          (void*)0 // array buffer offset
+          );
+
+
+
           glDrawArrays(GL_TRIANGLES, 0, mdl_index_count);
+          check();
 
-           //glBindVertexArray(VAO);
-           //glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
 
-           check();
-           //glDisableVertexAttribArray(attr_pos);
+          glDisableVertexAttribArray(state->attr_position);
+           glDisableVertexAttribArray(state->attr_vtex);
+
 	   // printf(".");
       }
 

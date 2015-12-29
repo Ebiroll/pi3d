@@ -2,8 +2,13 @@
 #define PKG_H
 #include "camera.h"
 
+extern "C" {
+#include "eglstate.h"
+}
+
+
 // Loads mdl file
-GLuint loadSimple(char *filename,Camera &camera);
+GLuint loadSimple(char *filename,Camera &camera,STATE_T* state);
 
 // Loads pkg file
 int loadPkg(char *filename,Camera &camera);
