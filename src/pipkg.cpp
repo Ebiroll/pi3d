@@ -45,6 +45,9 @@ GLint TextureFromData(const unsigned char* data,unsigned int length)
 {
     //Generate texture ID and load texture data
     GLuint textureID;
+
+    glPixelStorei ( GL_UNPACK_ALIGNMENT, 1 );
+
     glGenTextures(1, &textureID);
     int width,height;
     int numChannels=0;
@@ -63,8 +66,12 @@ GLint TextureFromData(const unsigned char* data,unsigned int length)
     // Parameters
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+    //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameteri ( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+    glTexParameteri ( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+
     glBindTexture(GL_TEXTURE_2D, 0);
     SOIL_free_image_data(image);
     return textureID;
@@ -401,7 +408,7 @@ GLuint loadSimple(char *filename,Camera &camera)
     int pos_indexes=ftell(file);
 
 
-    float *buff_data= (float *)malloc(sizeof(float)*5*numVertexes);
+    float *buff_data= (float *)malloc(sizeof(float)*5*numVertexes+1);
 
     Vertex_t *ptr= (Vertex_t *) &data[pos];
     unsigned short int *indexes = (unsigned short int *) &data[pos_indexes];

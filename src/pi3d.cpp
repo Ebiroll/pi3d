@@ -117,11 +117,11 @@ const char *vs =
       " varying vec2 texcoord;\n"
       " uniform sampler2D tex;\n"
       "void main() {\n"
-      "   //vec2 coord;\n"
-      "   gl_FragColor = vec4(1.0,1.0,0.0,1.0);\n"
-      "   //coord.x=clamp(texcoord.x,0.0,1.0);\n"
-      "   //coord.y=clamp(texcoord.y,0.0,1.0);\n"
-      "   //gl_FragColor = texture2D(tex, coord);\n"
+      "   vec2 coord;\n"
+      "   //gl_FragColor = vec4(1.0,1.0,0.0,1.0);\n"
+      "   coord.x=clamp(texcoord.x,0.0,1.0);\n"
+      "   coord.y=clamp(texcoord.y,0.0,1.0);\n"
+      "   gl_FragColor = texture2D(tex, coord);\n"
       "   //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);\n"
        "}\n";
 
@@ -214,10 +214,10 @@ void createSurface()
    //glGenBuffers(1, &ib);
    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib);
    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexes), &indexes[0], GL_STATIC_DRAW);
-   mdl_index_count=6;
+   mdl_index_count=12;
 
 
-   glEnableVertexAttribArray(0);
+   //glEnableVertexAttribArray(0);
 
 }
 
@@ -308,11 +308,11 @@ int main(int argc, char* argv[])
    glEnable(GL_DEPTH_TEST);
    check();
 
-
+#ifdef BCMHOST
    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
    //glEnable(GL_TEXTURE_2D);
    check();
-
+#endif
   
    //glEnable(GL_TEXTURE_2D);
 
@@ -533,8 +533,8 @@ int main(int argc, char* argv[])
 
       //if (rotating)
       {
-          angleX+=0.002;
-          angleY+=0.04;
+          angleX+=0.0002;
+          angleY+=0.004;
       }
 
       model = glm::rotate(model, angleX, glm::vec3(1.0f, 0.0f, 0.1f));
@@ -557,10 +557,10 @@ int main(int argc, char* argv[])
 
           // OLAS HERE!!  glBindVertexArrayOES(VAO);
           // glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
-
+#ifdef BCMHOST
           glEnableClientState( GL_VERTEX_ARRAY );
           check();
-
+#endif
           glBindBuffer(GL_ARRAY_BUFFER, state->buf);
           //glEnableVertexAttribArray(0);
           //check();
@@ -569,7 +569,7 @@ int main(int argc, char* argv[])
           //check();
 
           //glDrawArrays(GL_TRIANGLES, 0, mdl_index_count);
-          glDrawArrays(GL_TRIANGLES, 0, 36);
+          glDrawArrays(GL_TRIANGLES, 0, mdl_index_count);
 
            //glBindVertexArray(VAO);
            //glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
