@@ -62,18 +62,29 @@ static STATE_T _state, *state = &_state;	// global graphics state
 
 float vertices[] = {
      -5.0f,  -5.0f, 0.0f , // Vertex 0 (X, Y, Z)
+     0.0f,0.0f,           // uv
      5.0f, -5.0f, 0.0f , // Vertex 1 (X, Y, Z)
+     1.0f,1.0f,           // uv
      5.0f, 5.0f, 0.0f,   // Vertex 2 (X, Y ,Z)
+    1.0f,1.0f,           // uv
      5.0f, 5.0f, 0.0f,   // Vertex 3 (X, Y ,Z)
+    1.0f,1.0f,           // uv
      -5.0f,  5.0f, 0.0f , // Vertex 4 (X, Y, Z)
+    1.0f,1.0f,           // uv
      -5.0f, -5.0f, 0.0f,   // Vertex 5 (X, Y ,Z)
 
-     -10.0f,  -10.0f, -10.0f , // Vertex 0 (X, Y, Z)
-     10.0f, -10.0f, -10.0f , // Vertex 1 (X, Y, Z)
-     10.0f, 10.0f, -10.0f,   // Vertex 2 (X, Y ,Z)
-     10.0f, 10.0f, -10.0f,   // Vertex 3 (X, Y ,Z)
-     -10.0f,  10.0f, -10.0f , // Vertex 4 (X, Y, Z)
-     -10.0f, -10.0f, -10.0f   // Vertex 5 (X, Y ,Z)
+     -10.0f,  -10.0f, -10.0f , // Vertex 6 (X, Y, Z)
+    1.0f,1.0f,           // uv
+     10.0f, -10.0f, -10.0f , // Vertex 7 (X, Y, Z)
+    1.0f,1.0f,           // uv
+     10.0f, 10.0f, -10.0f,   // Vertex 8 (X, Y ,Z)
+    1.0f,1.0f,           // uv
+     10.0f, 10.0f, -10.0f,   // Vertex 9 (X, Y ,Z)
+    1.0f,1.0f,           // uv
+     -10.0f,  10.0f, -10.0f , // Vertex 10 (X, Y, Z)
+    1.0f,1.0f,           // uv
+     -10.0f, -10.0f, -10.0f ,  // Vertex 11 (X, Y ,Z)
+    1.0f,1.0f,           // uv
 
 };
 
@@ -206,15 +217,22 @@ void createSurface()
    glBindBuffer(GL_ARRAY_BUFFER, state->buf);
    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);  
    check();
-   glVertexAttribPointer(state->attr_position, 3, GL_FLOAT, 0, 12, 0);
+   //glVertexAttribPointer(state->attr_position, 3, GL_FLOAT, 0, 12, 0);
    check();
-   glEnableVertexAttribArray(state->attr_position);
+   //glEnableVertexAttribArray(state->attr_position);
+   glEnableVertexAttribArray(0);
    check();
+
+   glVertexAttribPointer(0, 3, GL_FLOAT, 0, 18, 0);
+   check();
+   glVertexAttribPointer(1, 2, GL_FLOAT, 0, 18, 0);
+   check();
+
    //GLuint ib;
    //glGenBuffers(1, &ib);
    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib);
    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexes), &indexes[0], GL_STATIC_DRAW);
-   mdl_index_count=6;
+   mdl_index_count=12;
 
 
    glEnableVertexAttribArray(0);
@@ -568,8 +586,8 @@ int main(int argc, char* argv[])
           //glEnableVertexAttribArray(1);
           //check();
 
-          //glDrawArrays(GL_TRIANGLES, 0, mdl_index_count);
-          glDrawArrays(GL_TRIANGLES, 0, 36);
+          glDrawArrays(GL_TRIANGLES, 0, mdl_index_count);
+          //glDrawArrays(GL_TRIANGLES, 0, 36);
 
            //glBindVertexArray(VAO);
            //glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
