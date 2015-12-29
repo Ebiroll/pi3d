@@ -173,8 +173,8 @@ Mesh::MeshEntry::MeshEntry(aiMesh *mesh,const aiScene *scene) {
 		glBindBuffer(GL_ARRAY_BUFFER, vbo[NORMAL_BUFFER]);
 		glBufferData(GL_ARRAY_BUFFER, 3 * mesh->mNumVertices * sizeof(GLfloat), normals, GL_STATIC_DRAW);
 
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-        glEnableVertexAttribArray (1);
+                glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+                glEnableVertexAttribArray (1);
 
 		delete normals;
 	}
@@ -199,18 +199,23 @@ Mesh::MeshEntry::MeshEntry(aiMesh *mesh,const aiScene *scene) {
 	}
 	
 
-    if(mesh->mMaterialIndex  >= 0)
-    {
+        if(mesh->mMaterialIndex  >= 0)
+        {
 
-        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-        vector<Texture> diffuseMaps = this->loadMaterialTextures(material,
-                                            aiTextureType_DIFFUSE, "texture_diffuse");
-        textures_loaded.insert(textures_loaded.end(), diffuseMaps.begin(), diffuseMaps.end());
-        vector<Texture> specularMaps = this->loadMaterialTextures(material,
-                                            aiTextureType_SPECULAR, "texture_specular");
-        textures_loaded.insert(textures_loaded.end(), specularMaps.begin(), specularMaps.end());
+            // Remember what
+            texture_index=textures_loaded.size();
 
-    }
+
+            aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+            vector<Texture> diffuseMaps = this->loadMaterialTextures(material,
+                                                aiTextureType_DIFFUSE, "texture_diffuse");
+            textures_loaded.insert(textures_loaded.end(), diffuseMaps.begin(), diffuseMaps.end());
+            vector<Texture> specularMaps = this->loadMaterialTextures(material,
+                                                aiTextureType_SPECULAR, "texture_specular");
+
+            textures_loaded.insert(textures_loaded.end(), specularMaps.begin(), specularMaps.end());
+
+        }
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
@@ -248,13 +253,13 @@ void Mesh::MeshEntry::render(GLuint prog) {
     if (textures_loaded.size()>0) {
        //printf("%d",textures_loaded[0].id);
        glActiveTexture(GL_TEXTURE0);
-       glBindTexture(GL_TEXTURE_2D, textures_loaded[0].id);
+       glBindTexture(GL_TEXTURE_2D, textures_loaded[texture_index].id);
        glUniform1i(glGetUniformLocation(prog, "tex"), 0);
     }
        
-	glBindVertexArray(vao);
-	glDrawElements(GL_TRIANGLES, elementCount, GL_UNSIGNED_INT, NULL);
-	glBindVertexArray(0);
+    glBindVertexArray(vao);
+    glDrawElements(GL_TRIANGLES, elementCount, GL_UNSIGNED_INT, NULL);
+    glBindVertexArray(0);
 }
 
 /**
@@ -262,9 +267,9 @@ void Mesh::MeshEntry::render(GLuint prog) {
 **/
 Mesh::Mesh(const char *filename)
 {
-	Assimp::Importer importer;
+    Assimp::Importer importer;
     const aiScene *scene = importer.ReadFile(filename, aiProcess_Triangulate );
-	if(!scene) {
+        if(!scene) {
 		printf("Unable to load mesh: %s\n", importer.GetErrorString());
                 exit(-1);
 	}

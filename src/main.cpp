@@ -148,6 +148,10 @@ void printHelp(int argc, char *argv[]) {
 }
 
 
+// Only used by pi3d.cpp
+static STATE_T _state, *state = &_state;	// global graphics state
+
+
 //void loadSimple(char *filename,Camera &camera);
 
 
@@ -281,7 +285,7 @@ int main(int argc, char* argv[])
    {
       if (strcmp(pExt,".mdl")==0)
       {
-          loadSimple(argv[argc-1],camera);
+          loadSimple(argv[argc-1],camera,state);
       } else if (strcmp(pExt,".pkg")==0) {
           loadPkg(argv[argc-1],camera);
       }

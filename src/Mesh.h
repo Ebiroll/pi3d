@@ -23,12 +23,12 @@ class Mesh
 public :
 	struct MeshEntry {
         enum BUFFERS {
-			VERTEX_BUFFER, TEXCOORD_BUFFER, NORMAL_BUFFER, INDEX_BUFFER
-		};
-		GLuint vao;
-		GLuint vbo[4];
+                VERTEX_BUFFER, TEXCOORD_BUFFER, NORMAL_BUFFER, INDEX_BUFFER
+        };
+        GLuint vao;
+        GLuint vbo[4];
 
-		unsigned int elementCount;
+        unsigned int elementCount;
 
         std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName);
         MeshEntry(aiMesh *mesh,const aiScene *scene);
@@ -36,11 +36,14 @@ public :
 
 		void load(aiMesh *mesh);
 		void render(GLuint prog);
+
+        int texture_index;
+
 	};
 
 	std::vector<MeshEntry*> meshEntries;
 
-    static std::vector<Texture> textures_loaded;
+       static std::vector<Texture> textures_loaded;
 
 public:
 	Mesh(const char *filename);
