@@ -21,7 +21,7 @@ using std::string;
 
 
 #include "EGL/egl.h"
-#include "GLES/gl.h"
+//#include "GLES/gl.h"
 #include "GLES2/gl2.h"
 
 // Should be defined somewhere

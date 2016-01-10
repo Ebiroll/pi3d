@@ -39,7 +39,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unistd.h>
 #include "shader.h"
 
+#ifdef BCMHOST
 #include "bcm_host.h"
+#endif
 
 #include "GLES/gl.h"
 #include "EGL/egl.h"

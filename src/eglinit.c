@@ -215,13 +215,15 @@ void oglinit(STATE_T * state)
 	//	return -1;
 	//}
 
-	//if (!eglQuerySurface(egl_display, egl_surface, EGL_WIDTH, &width) ||
-	//    !eglQuerySurface(egl_display, egl_surface, EGL_HEIGHT, &height)) {
-	//	fprintf(stderr, "Error: eglQuerySurface failed: 0x%08X\n",
-	//		eglGetError());
+	//int width,height;
+
+	if (!eglQuerySurface(state->display, state->surface, EGL_WIDTH, &state->screen_width) ||
+	    !eglQuerySurface(state->display, state->surface, EGL_HEIGHT, &state->screen_height)) {
+		fprintf(stderr, "Error: eglQuerySurface failed: 0x%08X\n",
+			eglGetError());
 	//	return -1;
-	//}
-	//printf("Surface size: %dx%d\n", width, height);
+	}
+	printf("Surface size: %dx%d\n", state->screen_width, state->screen_height);
 
 	//if (!eglMakeCurrent(egl_display, egl_surface, egl_surface, context)) {
 	//	fprintf(stderr, "Error: eglMakeCurrent() failed: 0x%08X\n",

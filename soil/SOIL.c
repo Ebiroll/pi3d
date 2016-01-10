@@ -27,7 +27,7 @@
 	#define APIENTRY
 #else
 #ifdef HAVEGLES
-#include "GLES/gl.h"
+//#include "GLES/gl.h"
 #include "GLES2/gl2.h"
 #ifndef APIENTRY
 #define APIENTRY

@@ -26,7 +26,7 @@ using std::string;
 #include "camera.h"
 #include "EGL/egl.h"
 #include "GLES/glplatform.h"
-#include "GLES/gl.h"
+//#include "GLES/gl.h"
 #include "GLES2/gl2.h"
 
 // Should be defined somewhere
@@ -261,7 +261,7 @@ void createSurface()
 
     glGenBuffers(1, &state->buf);
     glBindBuffer(GL_ARRAY_BUFFER, state->buf);
-    glBufferData(GL_ARRAY_BUFFER, (numVertexes*sizeof(float)*3), buff_data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*(numVertexes*3), buff_data, GL_STATIC_DRAW);
     check();
 
     glGenBuffers(1, &state->uvbuffer);
@@ -340,7 +340,7 @@ int main(int argc, char* argv[])
   char geometry_shader[512];
   
 #ifdef BCMHOST
-  bcm_host_init();
+    bcm_host_init();
 #endif
   memset(state, 0, sizeof(*state));
 
@@ -365,7 +365,7 @@ int main(int argc, char* argv[])
 
 #ifdef BCMHOST
    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-   //glEnable(GL_TEXTURE_2D);
+   glEnable(GL_TEXTURE_2D);
    check();
 #endif
   
@@ -573,8 +573,8 @@ int main(int argc, char* argv[])
           // OLAS HERE!!  glBindVertexArrayOES(VAO);
           // glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
 #ifdef BCMHOST
-          glEnableClientState( GL_VERTEX_ARRAY );
-          check();
+	glEnableClientState( GL_VERTEX_ARRAY );
+	check();
 #endif
           glEnableVertexAttribArray(state->attr_position);
           glBindBuffer(GL_ARRAY_BUFFER, state->buf);
