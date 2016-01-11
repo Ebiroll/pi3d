@@ -30,11 +30,12 @@ On archlinux you install the dependecies with
 
 To build
 
+
     mkdir build
-	cd build
-	cmake ..
-	#To run
-	pi3d ../test/tri_cube.blend
+    cd build
+    cmake ..
+    #To run
+    pi3d ../test/tri_cube.blend
 
 To run the nice looking test shaders try,
 
@@ -44,5 +45,6 @@ To run the nice looking test shaders try,
 These programs wil need X-Windows to run     
 
 On the raspberry make will build pi3d ,triangle & triangle2.
-pi3d still does not work properly, but I am getting closer.
+pi3d on raspberry now works.
 These programs uses EGL2 and does not need X-Windows to run.
+Try it with ./pi3d -t test/push_back_car.dds  test/Towcar.mdl

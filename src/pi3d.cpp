@@ -364,9 +364,9 @@ int main(int argc, char* argv[])
    check();
 
 #ifdef BCMHOST
-   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-   glEnable(GL_TEXTURE_2D);
-   check();
+   //glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+   //glEnable(GL_TEXTURE_2D);
+   //check();
 #endif
   
    //glEnable(GL_TEXTURE_2D);
@@ -573,8 +573,8 @@ int main(int argc, char* argv[])
           // OLAS HERE!!  glBindVertexArrayOES(VAO);
           // glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
 #ifdef BCMHOST
-	glEnableClientState( GL_VERTEX_ARRAY );
-	check();
+	//glEnableClientState( GL_VERTEX_ARRAY );
+	//check();
 #endif
           glEnableVertexAttribArray(state->attr_position);
           glBindBuffer(GL_ARRAY_BUFFER, state->buf);
