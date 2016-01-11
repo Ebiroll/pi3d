@@ -7,8 +7,8 @@ typedef struct {
 	uint32_t screen_height;
 	// OpenGL|ES objects
 #ifdef HAVEGLES
-    GLuint buf;
-    GLuint uvbuffer;
+    //GLuint buf;
+    //GLuint uvbuffer;
 
     GLuint attr_position;
     GLuint attr_vtex;

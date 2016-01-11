@@ -70,7 +70,8 @@ float vertices[] = {
     1.0f,1.0f,           // uv
      -5.0f,  5.0f, 0.0f , // Vertex 4 (X, Y, Z)
     1.0f,0.0f,           // uv
-     -5.0f, -5.0f, 0.0f,   // Vertex 5 (X, Y ,Z)
+    -5.0f, -5.0f, 0.0f,   // Vertex 5 (X, Y ,Z)
+    1.0f,0.0f,           // uv
 
      -10.0f,  -10.0f, -10.0f , // Vertex 6 (X, Y, Z)
     1.0f,0.0f,           // uv
@@ -88,8 +89,8 @@ float vertices[] = {
 };
 
 
+GLushort  indexes[] = {0,1,2,3,4,5,6,7,8,9,10,11};
 
-GLushort  indexes[] = {0,1,2,2,3,0};
 
 //#define check() assert(glGetError() == 0)
 
@@ -135,47 +136,6 @@ const char *vs =
       "   gl_FragColor = texture2D(tex, coord);\n"
        "}\n";
 
-#if 0
-const char* vs = GLSL(
-        attribute highp vec3 position;
-        attribute vec3 normal;
-        attribute vec2 vtex;
-
-        uniform mat4 model;
-        uniform mat4 view;
-        uniform mat4 projection;
-
-        varying vec2 texcoord;
-
-        void main()
-        {
-            //gl_Position = projection * view * model * vec4(position, 1.0);
-            gl_Position = vec4(position, 1.0);
-            //texcoord = vec2(vtex.x , vtex.y)  + vec2(0.5);
-            //texcoord  =  vtex;
-            texcoord = vec2(vtex.x, 1.0 - vtex.y);
-        });
-
-
-const char* fs = GLSL(
-//            precision highp vec2;
-//            precision mediump float;
-//            precision mediump sampler2D;
-
-//           varying highp vec2 texcoord;
-//           uniform sampler2D tex;
-
-            void main()
-            {
-	        //gl_FragColor = texture2D(tex, texcoord);
-                //gl_FragColor = vec4(0.0,1.0,0.0,1.0);
-                gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);
-            });
-
-#endif
-
-
-
 
 glm::vec3 center(0.0f, 0.0f, 0.0f);
 
@@ -198,7 +158,6 @@ int screenHeigth=600;
 
 // Backup texture
 GLuint texture1;
-GLuint VBO, VAO;
 int mdl_index_count=-1;
 
 
@@ -208,32 +167,16 @@ GLfloat angleY=0.0;
 bool rotating=true;
 
 
-void createSurface()
+typedef struct simpleVertex
 {
-    /*
-    //GLuint vb;
-   glGenBuffers(1, &state->buf);
-   check();
-   glBindBuffer(GL_ARRAY_BUFFER, state->buf);
-   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);  
-   check();
-   //glVertexAttribPointer(state->attr_position, 3, GL_FLOAT, 0, 12, 0);
-   check();
-   //glEnableVertexAttribArray(state->attr_position);
-   glEnableVertexAttribArray(0);
-   check();
+        float pos[3];
+        float tex[2];
+} simpleVertex_t;
 
-   glVertexAttribPointer(0, 3, GL_FLOAT, 0, 18, 0);
-   check();
-   glVertexAttribPointer(1, 2, GL_FLOAT, 0, 18, 0);
-   check();
 
-   //GLuint ib;
-   //glGenBuffers(1, &ib);
-   //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib);
-   //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexes), &indexes[0], GL_STATIC_DRAW);
 
-   */
+void createSurface(mdlGLData *glData,float zOffset)
+{
 
     int numVertexes=1+sizeof(vertices)/(5*sizeof(float));
     printf("Create surface %d\n",numVertexes);
@@ -241,14 +184,17 @@ void createSurface()
     float *buff_data= (float *)malloc(sizeof(float)*3*numVertexes);
     float *uv_data= (float *)malloc(sizeof(float)*2*numVertexes);
 
-    Vertex_t *ptr= (Vertex_t *) &vertices[0];
+    mdl_index_count=12;
+
+
+    simpleVertex_t *ptr= (simpleVertex_t *) &vertices[0];
     for (int j=0;j<(mdl_index_count*3);j+=3)
     {
         int myix=j/3;
         printf("X,Y,Z U,V = %.2f , %.2f , %.2f     %.2f,%.2f\n",ptr[myix].pos[0],ptr[myix].pos[1],ptr[myix].pos[2],ptr[myix].tex[0],ptr[myix].tex[1]);
         buff_data[j]=ptr[myix].pos[0];
         buff_data[j+1]=ptr[myix].pos[1];
-        buff_data[j+2]=ptr[myix].pos[2];
+        buff_data[j+2]=ptr[myix].pos[2]+zOffset;
 
     }
 
@@ -259,18 +205,20 @@ void createSurface()
         uv_data[j+1]=ptr[myix].tex[1];
     }
 
-    glGenBuffers(1, &state->buf);
-    glBindBuffer(GL_ARRAY_BUFFER, state->buf);
+    glGenBuffers(1, &glData->dataVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, glData->dataVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*(numVertexes*3), buff_data, GL_STATIC_DRAW);
     check();
 
-    glGenBuffers(1, &state->uvbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, state->uvbuffer);
+    glGenBuffers(1, &glData->uvVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, glData->uvVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float)*2*numVertexes, uv_data, GL_STATIC_DRAW);
     check();
 
-
-    mdl_index_count=12;
+    glGenBuffers(1, &glData->indexVAO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glData->indexVAO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort)*numVertexes, indexes, GL_STATIC_DRAW);
+    check();
 
 
 
@@ -331,6 +279,10 @@ GLint TextureFromFile(const char* path, string directory, bool gamma)
     return textureID;
 }
 
+#define MAX_MDLS 20
+mdlGLData staticData[MAX_MDLS];
+int gMaxMdl=0;
+
 
 int main(int argc, char* argv[])
 {
@@ -362,18 +314,8 @@ int main(int argc, char* argv[])
    // Setup some OpenGL options
    glEnable(GL_DEPTH_TEST);
    check();
-
-#ifdef BCMHOST
-   //glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-   //glEnable(GL_TEXTURE_2D);
-   //check();
-#endif
-  
    //glEnable(GL_TEXTURE_2D);
 
-
-   // Setup the model world
-   //init_model_proj(state);
 
    
    for (int i=1; i< argc; i++) {
@@ -437,7 +379,8 @@ int main(int argc, char* argv[])
    {
       if (strcmp(pExt,".mdl")==0)
       {
-         state->buf=loadSimple(argv[argc-1],camera,state);
+         loadSimple(argv[argc-1],camera,state,&staticData[gMaxMdl]);
+         gMaxMdl++;
          check();
       } else if (strcmp(pExt,".pkg")==0) {
          //loadPkg(argv[argc-1],camera);
@@ -451,9 +394,22 @@ int main(int argc, char* argv[])
    else
    {
               printf("Please specify model to load \n");
-              createSurface();
-              //exit();
+
+              createSurface(&staticData[gMaxMdl],0.0f);
+              gMaxMdl++;
+
+              createSurface(&staticData[gMaxMdl],2.0f);
+              gMaxMdl++;
+
    }
+
+   //createSurface(&staticData[gMaxMdl],0.0f);
+   //gMaxMdl++;
+
+   //createSurface(&staticData[gMaxMdl],2.0f);
+   //gMaxMdl++;
+
+
    //setupTestData();
    //glColor4f(0.8f, 0.5f, 0.1f,1.0f);
    //glEnable(GL_BLEND);
@@ -486,10 +442,6 @@ int main(int argc, char* argv[])
     
     while (true) {
 
-     //glBindFramebuffer(GL_FRAMEBUFFER,0);
-     //glLoadIdentity();
-     // move camera back to see the cube
-     //glTranslatef(0.f, 0.f, -10.0f);
 
      
       // Set frame time
@@ -527,36 +479,20 @@ int main(int argc, char* argv[])
       //GLint projLoc = glGetUniformLocation(shader.Program, "projection");
       GLint mvpLoc = glGetUniformLocation(shader.Program, "mvp");
       check();
-      //printf("Uniform projection at %d\n", projLoc);
-      //printf("Attrib pos at %d\n", attr_pos);
-      //printf("Attrib color at %d\n", attr_color);
       
-
-      //glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-      // Note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
-      // glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-     // Transformation matrices
-     //glm::mat4 projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeigth, 0.1f, 100.0f);
-     //glm::mat4 view = camera.GetViewMatrix();
-     //glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-     //glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-
 
       glm::mat4 model;
       //model = glm::translate(model, center);
 
       //if (rotating)
       {
-          angleX+=0.0002;
-          angleY+=0.004;
+          angleX+=0.00002;
+          angleY+=0.0004;
       }
 
       model = glm::rotate(model, angleX, glm::vec3(1.0f, 0.0f, 0.1f));
       model = glm::rotate(model, angleY, glm::vec3(0.0f, 1.0f, 0.1f));
 
-      //glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-      //check();
       
       glm::mat4 mvp=projection * view * model;
 
@@ -565,19 +501,13 @@ int main(int argc, char* argv[])
       
       //printf("+texture--%d\n",texture1);
       
-      if (mdl_index_count>0)
+      for (int q=0;q<gMaxMdl;q++)
       {
           // Draw mdl :-P
           //glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);  // Texture unit 0 is for base images.
 
-          // OLAS HERE!!  glBindVertexArrayOES(VAO);
-          // glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
-#ifdef BCMHOST
-	//glEnableClientState( GL_VERTEX_ARRAY );
-	//check();
-#endif
           glEnableVertexAttribArray(state->attr_position);
-          glBindBuffer(GL_ARRAY_BUFFER, state->buf);
+          glBindBuffer(GL_ARRAY_BUFFER, staticData[q].dataVBO);
           check();
           glVertexAttribPointer(
           state->attr_position, // The attribute we want to configure
@@ -592,7 +522,7 @@ int main(int argc, char* argv[])
 
 
           glEnableVertexAttribArray(state->attr_vtex);
-          glBindBuffer(GL_ARRAY_BUFFER, state->uvbuffer);
+          glBindBuffer(GL_ARRAY_BUFFER, staticData[q].uvVBO);
           glVertexAttribPointer(
           state->attr_vtex, // The attribute we want to configure
           2, // size : U+V => 2
@@ -602,13 +532,16 @@ int main(int argc, char* argv[])
           (void*)0 // array buffer offset
           );
 
+          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,staticData[q].indexVAO);
+          glDrawElements(GL_TRIANGLES,mdl_index_count,GL_UNSIGNED_SHORT,0);
+
+          //glDrawArrays(GL_TRIANGLES, 0, mdl_index_count);
 
 
-          glDrawArrays(GL_TRIANGLES, 0, mdl_index_count);
           check();
 
 
-          glDisableVertexAttribArray(state->attr_position);
+           glDisableVertexAttribArray(state->attr_position);
            glDisableVertexAttribArray(state->attr_vtex);
 
 	   // printf(".");

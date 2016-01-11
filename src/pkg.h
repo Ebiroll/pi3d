@@ -6,9 +6,16 @@ extern "C" {
 #include "eglstate.h"
 }
 
+// These are Opengl data loaded for each model/mesh
+struct mdlGLData {
+    GLuint dataVBO;
+    GLuint uvVBO;
+    GLuint indexVAO;
+    GLuint textureIx;
+};
 
-// Loads mdl file
-GLuint loadSimple(char *filename,Camera &camera,STATE_T* state);
+// Loads mdl file, GLdata should contain pointer to data to be returned
+GLuint loadSimple(char *filename,Camera &camera,STATE_T* state,mdlGLData *GLdata);
 
 // Loads pkg file
 int loadPkg(char *filename,Camera &camera);

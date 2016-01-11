@@ -321,7 +321,7 @@ void loadMdl(unsigned char*read_pos,unsigned int length)
 
 
 // Custom format (mdl file)
-GLuint loadSimple(char *filename,Camera &camera,STATE_T* state)
+GLuint loadSimple(char *filename,Camera &camera,STATE_T* state,mdlGLData *GLdata)
 {
 
     //std::string totfilename=std::string(filename);
@@ -412,6 +412,7 @@ GLuint loadSimple(char *filename,Camera &camera,STATE_T* state)
 
     float *buff_data= (float *)malloc(sizeof(float)*3*numVertexes+1);
     float *uv_data= (float *)malloc(sizeof(float)*2*numVertexes+1);
+    GLushort *indexData=(GLushort *)malloc(sizeof(GLushort)*numVertexes+1);
 
     Vertex_t *ptr= (Vertex_t *) &data[pos];
     unsigned short int *indexes = (unsigned short int *) &data[pos_indexes];
@@ -420,6 +421,10 @@ GLuint loadSimple(char *filename,Camera &camera,STATE_T* state)
     {
         printf("%d,",*indexes/3);
         int myix=*indexes;
+        indexData[j]=j;
+        indexData[j+1]=j+1;
+        indexData[j+2]=j+2;
+
         printf("X,Y,Z U,V = %.2f , %.2f , %.2f     %.2f,%.2f\n",ptr[myix].pos[0],ptr[myix].pos[1],ptr[myix].pos[2],ptr[myix].tex[0],ptr[myix].tex[1]);
         buff_data[j]=ptr[myix].pos[0];
         buff_data[j+1]=ptr[myix].pos[1];
@@ -437,32 +442,23 @@ GLuint loadSimple(char *filename,Camera &camera,STATE_T* state)
     }
 
     //GLuint vb;
-    glGenBuffers(1, &state->buf);
-    glBindBuffer(GL_ARRAY_BUFFER, state->buf);
+    glGenBuffers(1, &GLdata->dataVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, GLdata->dataVBO);
     glBufferData(GL_ARRAY_BUFFER, (numVertexes*sizeof(float)*3), buff_data, GL_STATIC_DRAW);
 
 
-    glGenBuffers(1, &state->uvbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, state->uvbuffer);
+    glGenBuffers(1, &GLdata->uvVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, GLdata->uvVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float)*2*numVertexes, uv_data, GL_STATIC_DRAW);
 
 
-    //GLuint state->attr_vtex = glGetAttribLocation(programID, "vtex");
-
-    // 2nd attribute buffer : UVs
-    glEnableVertexAttribArray(state->attr_vtex);
-    glBindBuffer(GL_ARRAY_BUFFER, state->uvbuffer);
-    glVertexAttribPointer(
-    state->attr_vtex, // The attribute we want to configure
-    2, // size : U+V => 2
-    GL_FLOAT, // type
-    GL_FALSE, // normalized?
-    0, // stride
-    (void*)0 // array buffer offset
-    );
+    glGenBuffers(1, &GLdata->indexVAO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLdata->indexVAO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort)*numVertexes*3, indexData, GL_STATIC_DRAW);
 
 
-    return state->buf;
+
+    return 1;
 
 }
 

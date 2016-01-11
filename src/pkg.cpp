@@ -384,8 +384,10 @@ void loadMdl(unsigned char*read_pos,unsigned int length)
 
 
 // Custom format (mdl file)
-GLuint loadSimple(char *filename,Camera &camera,STATE_T *state)
+GLuint loadSimple(char *filename,Camera &camera,STATE_T *state,mdlGLData *GLdata)
 {
+
+    // GLdata Not used here... :-P
 
     //std::string totfilename=std::string(filename);
 
