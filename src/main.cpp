@@ -286,7 +286,7 @@ int main(int argc, char* argv[])
       {
           loadSimple(argv[argc-1],camera,state,&dummy);
       } else if (strcmp(pExt,".pkg")==0) {
-          loadPkg(argv[argc-1],camera);
+          loadPkg(argv[argc-1],camera,&dummy,0);
       }
       else
       {

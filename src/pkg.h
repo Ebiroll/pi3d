@@ -18,7 +18,7 @@ struct mdlGLData {
 GLuint loadSimple(char *filename,Camera &camera,STATE_T* state,mdlGLData *GLdata);
 
 // Loads pkg file
-int loadPkg(char *filename,Camera &camera);
+int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem);
 
 #define SIMPLE_HASH      2031172703
 #define BUILDING_HASH    955201417

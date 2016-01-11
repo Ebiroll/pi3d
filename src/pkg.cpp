@@ -11,6 +11,8 @@
 #include "SOIL.h"
 #include <vector>
 #include <string>
+#include "hash.h"
+
 
 using std::vector;
 using std::string;
@@ -19,6 +21,13 @@ using std::string;
 extern GLuint VBO, VAO;
 extern int mdl_index_count;
 
+
+typedef struct {
+    GLuint    textureID;
+    uint32_t  hash;
+} TextureHashMap;
+
+std::vector<TextureHashMap>  loadedImages;
 
 
 void loadMdl(unsigned char*read_pos,unsigned int length);
@@ -231,7 +240,7 @@ void loadAvMdl(unsigned char*read_pos,unsigned int length)
 
 
 // Loads pkg file
-int loadPkg(char *filename,Camera &camera)
+int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem)
 {
    PKG_content *my_content;
    int ret=0;
@@ -282,6 +291,7 @@ int loadPkg(char *filename,Camera &camera)
                   break;
                   case BUILDING_HASH:
                     printf("BUILDING_HASH\n");
+                    loadAvMdl(&data[my_content->files[ix].offset],my_content->files[ix].size);
                   break;
                   case AV_MODEL_HASH:
                     printf("AV_MODEL_HASH\n");
@@ -298,8 +308,18 @@ int loadPkg(char *filename,Camera &camera)
 
           }
           if (strcmp(pExt,".dds")==0)
-          {
-              ret=TextureFromData(&data[my_content->files[ix].offset],my_content->files[ix].size);
+          {              
+              GLuint id=TextureFromData(&data[my_content->files[ix].offset],my_content->files[ix].size);
+              TextureHashMap tmp;
+
+              Hash_key namehash(my_content->files[ix].file);
+              tmp.hash=namehash;
+              tmp.textureID=id;
+
+              printf("Stored image %s hash %u as %d\n",my_content->files[ix].file,tmp.hash,tmp.textureID);
+
+              loadedImages.push_back(tmp);
+
           }
       }
    }

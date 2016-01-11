@@ -23,8 +23,8 @@ INCLUDES+=-I/opt/vc/include/ -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc
 
 all:	pi3d triangle triangle2
 
-pi3d: pi3d.o bcminit.o pipkg.o shader.o libsoil.a
-	g++  -g  $(LIBFLAGS) -ljpeg -lpthread -lrt -lm  bcminit.o pi3d.o pipkg.o shader.o libsoil.a  -o pi3d
+pi3d: pi3d.o bcminit.o pipkg.o shader.o hash.o libsoil.a
+        g++  -g  $(LIBFLAGS) -ljpeg -lpthread -lrt -lm  bcminit.o pi3d.o pipkg.o shader.o hash.o libsoil.a  -o pi3d
 
 triangle: triangle.o shader.o
 	g++  -g  $(LIBFLAGS) -lbcm_host -lvchiq_arm -ljpeg -lpthread -lrt -lm  triangle.o shader.o  -o triangle
@@ -44,6 +44,10 @@ pi3d.o:	src/pi3d.cpp
 
 shader.o:	src/shader.cpp
 	g++ $(CXXFLAGS) -O2 -fPIC -Wall $(INCLUDEFLAGS)  -c src/shader.cpp
+
+hash.o:	src/hash.cpp
+        g++ $(CXXFLAGS) -O2 -fPIC -Wall $(INCLUDEFLAGS)  -c src/hash.cpp
+
 
 pipkg.o:	src/pipkg.cpp
 	g++ $(CXXFLAGS) -O2 -fPIC -Wall $(INCLUDEFLAGS)  -c src/pipkg.cpp

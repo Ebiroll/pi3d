@@ -9,6 +9,7 @@
 #include <vector>
 #include <string>
 #include <stdlib.h>
+#include "hash.h"
 
 
 #include <iostream>
@@ -38,9 +39,14 @@ extern "C" {
 
 #include "pkg.h"
 
-extern GLuint VBO, VAO;
 extern int mdl_index_count;
 
+typedef struct {
+    GLuint    textureID;
+    uint32_t  hash;
+} TextureHashMap;
+
+std::vector<TextureHashMap>  loadedImages;
 
 
 void loadMdl(unsigned char*read_pos,unsigned int length);
@@ -100,7 +106,7 @@ struct IndexVertex
 
 
 // Custom format (mdl file)
-void loadPkgMdl(unsigned char*read_pos,unsigned int length)
+void loadPkgMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
 {
   mdl_lod1Header_t *header=(mdl_lod1Header_t *)read_pos;
 
@@ -177,8 +183,8 @@ void loadPkgMdl(unsigned char*read_pos,unsigned int length)
 }
 
 
-// Loads pkg file
-int loadPkg(char *filename,Camera &camera)
+// Loads pkg file, returns number of loaded elements
+int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem)
 {
    PKG_content *my_content;
    int ret=0;
@@ -220,14 +226,24 @@ int loadPkg(char *filename,Camera &camera)
        {
           if (strcmp(pExt,".mdl")==0)
           {
-              if (strcmp(my_content->files[ix].file,"b733.mdl")==0)
-              {
-                  loadPkgMdl(&data[my_content->files[ix].offset],my_content->files[ix].size);
-              }
+              loadPkgMdl(&data[my_content->files[ix].offset],my_content->files[ix].size,GLdata);
+              GLdata++;
+              ret++;
           }
           if (strcmp(pExt,".dds")==0)
           {
-              ret=TextureFromData(&data[my_content->files[ix].offset],my_content->files[ix].size);
+              GLuint id=TextureFromData(&data[my_content->files[ix].offset],my_content->files[ix].size);
+              TextureHashMap tmp;
+
+              Hash_key namehash(my_content->files[ix].file);
+              tmp.hash=namehash;
+              tmp.textureID=id;
+
+              printf("Stored image %s hash %u as %d\n",my_content->files[ix].file,tmp.hash,tmp.textureID);
+
+              loadedImages.push_back(tmp);
+
+
           }
       }
    }
@@ -344,11 +360,6 @@ GLuint loadSimple(char *filename,Camera &camera,STATE_T* state,mdlGLData *GLdata
     mdl_lod1Header_t *test_header=(mdl_lod1Header_t *)&data[0];
 
 
-    //loadMdl(&data[0],size);
-
-    // This only works when nlod=1!!
-    //assert(test_header->nlods==1);
-
     fclose(file);
     file=fopen(filename, "rb");
 
@@ -419,11 +430,10 @@ GLuint loadSimple(char *filename,Camera &camera,STATE_T* state,mdlGLData *GLdata
     int j=0;
     for (j=0;j<(mdl_index_count*3);j+=3)
     {
-        printf("%d,",*indexes/3);
-        int myix=*indexes;
-        indexData[j]=j;
-        indexData[j+1]=j+1;
-        indexData[j+2]=j+2;
+        //printf("%d,",*indexes/3);
+        //int myix=*indexes;
+        int myix=j/3;
+        indexData[myix]=*indexes;
 
         printf("X,Y,Z U,V = %.2f , %.2f , %.2f     %.2f,%.2f\n",ptr[myix].pos[0],ptr[myix].pos[1],ptr[myix].pos[2],ptr[myix].tex[0],ptr[myix].tex[1]);
         buff_data[j]=ptr[myix].pos[0];

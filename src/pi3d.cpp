@@ -383,7 +383,7 @@ int main(int argc, char* argv[])
          gMaxMdl++;
          check();
       } else if (strcmp(pExt,".pkg")==0) {
-         //loadPkg(argv[argc-1],camera);
+         gMaxMdl+=loadPkg(argv[argc-1],camera,&staticData[gMaxMdl],MAX_MDLS-gMaxMdl);
       }
       else
       {
