@@ -123,7 +123,6 @@ void loadSimpleMdl(uint8_t *data,uint32_t size,mdlGLData *GLdata)
 
     uint32_t buffer_size;
     buffer_size=*(uint32_t *)read_pos;
-
     read_pos+=4;
 
     // Part of header
@@ -147,10 +146,17 @@ void loadSimpleMdl(uint8_t *data,uint32_t size,mdlGLData *GLdata)
 
     //fseek(file,pos + buffer_size,SEEK_SET);
     //fread(&buffer_size, 4,1,file);
-    buffer_size=*(uint32_t *)read_pos;
-    read_pos += buffer_size/2 ;
 
-    printf("index count %d\n",mdl_index_count);
+    read_pos +=  buffer_size;
+    buffer_size=*(uint32_t *)read_pos;
+    read_pos+=4;
+
+    //for (int i = 0; i < 16; i ++) {
+    //        printf(" %2x", read_pos[i]);
+    //}
+
+    GLdata->numIndexes=buffer_size/2;
+    printf("index count %d\n",GLdata->numIndexes);
 
     //pos=ftell(file);
 
@@ -221,11 +227,10 @@ void loadAvMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
   read_pos+=buffer_size;
 
   buffer_size=*(uint32_t *)read_pos;
+  //mdl_index_count = buffer_size/2 ;
 
-  mdl_index_count = buffer_size/2 ;
-
-  printf("index count %d\n",mdl_index_count);
-  GLdata->numIndexes=mdl_index_count;
+  printf("index count %d\n",buffer_size/2);
+  GLdata->numIndexes=buffer_size/2;
 
 
   //pos=ftell(file);
@@ -289,10 +294,10 @@ int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem)
    int numF=my_content->n_files;
    for (int ix=0;ix<numF;ix++)
    {
-       //printf("%s\n",my_content->files[ix].file);
-       //printf("off=%d\n",my_content->files[ix].offset);
-       //printf("siz=%d\n",my_content->files[ix].size);
-       //printf("nxt=%d\n",my_content->files[ix].offset + my_content->files[ix].size);
+       printf("%s\n",my_content->files[ix].file);
+       printf("off=%d\n",my_content->files[ix].offset);
+       printf("siz=%d\n",my_content->files[ix].size);
+       printf("nxt=%d\n",my_content->files[ix].offset + my_content->files[ix].size);
 
        char *pExt = strrchr(my_content->files[ix].file, '.');
        if (pExt != NULL)
@@ -321,6 +326,7 @@ int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem)
                     printf("AV_MODEL_HASH\n");
                     loadAvMdl(&data[my_content->files[ix].offset],my_content->files[ix].size,GLdata);
                     GLdata++;
+                    ret++;
                   break;
                   case AV_CS_HASH:
                    printf("AV_CS_HASH\n");
@@ -346,6 +352,22 @@ int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem)
               loadedImages.push_back(tmp);
 
           }
+          if (strcmp(pExt,".png")==0)
+          {
+              GLuint id=TextureFromData(&data[my_content->files[ix].offset],my_content->files[ix].size);
+              TextureHashMap tmp;
+
+              Hash_key namehash(my_content->files[ix].file);
+              tmp.hash=namehash;
+              tmp.textureID=id;
+
+              printf("Stored image %s hash %u as %d\n",my_content->files[ix].file,tmp.hash,tmp.textureID);
+
+              loadedImages.push_back(tmp);
+
+          }
+
+
       }
    }
    printf("LOADED!!\n\n");

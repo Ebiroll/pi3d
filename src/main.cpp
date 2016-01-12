@@ -403,7 +403,6 @@ while (!glfwWindowShouldClose(window)) {
 
       glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
 
-#if 0
       if (gMaxMdl>0)
       {
 
@@ -412,15 +411,13 @@ while (!glfwWindowShouldClose(window)) {
               //printf("%d\n",q);
               glActiveTexture(GL_TEXTURE0);
               glBindTexture(GL_TEXTURE_2D, staticData[q].textureIx);
-              glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);  // Texture unit 0 is for base images.
+              //glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);  // Texture unit 0 is for base images.
 
               glBindVertexArray(staticData[q].indexVAO);
               glDrawElements(GL_TRIANGLES, staticData[q].numIndexes, GL_UNSIGNED_SHORT, 0);
 
           }
       }
-#endif
-
       if (mdl_index_count>0)
       {
           // Draw mdl :-P
@@ -433,7 +430,6 @@ while (!glfwWindowShouldClose(window)) {
           glBindVertexArray(VAO);
           glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
       }
-
       if (mesh) mesh->render(shader.Program);
       glfwSwapBuffers(window);
 }

@@ -382,15 +382,169 @@ void printHelp(int argc, char *argv[]) {
     printf("     -o   output name defaults to modelname.pkg\n");
     printf("     -d   Print all vertices\n");
     printf("     -t   texture filename to create hash with.\n");
-    printf("     -m   What mesh to extract.\n");
-    printf("     -a   Extract all meshes.\n");
-    printf("     -i   material index.\n");
     printf("     -s   Skinned rendertype\n");
     printf("     -h   This helptext\n");
 
     // -d   Displays all header metadata
     // -of  The old box mdl example format, without render_type
 }
+
+#pragma pack(1)
+
+/*
+typedef struct
+{
+    char file[32];
+    uint32_t size;
+    uint32_t offset;
+} SingleEntry;
+*/
+
+struct PkgEntry
+{
+    char file[32];
+    uint32_t size;
+    uint32_t offset;
+} ;
+
+
+
+typedef struct
+{
+    std::string filename;
+    uint32_t    size;
+} fileContent;
+
+
+std::vector<std::string> imgFiles;
+std::vector<std::string> mdlFiles;
+
+
+
+
+uint32_t fileLength(const char *filename) {
+    FILE *file = fopen(filename, "rb");
+
+    if (file==NULL)
+    {
+        printf("Failed open file %s for reading \n",filename);
+        exit(1);
+    }
+
+
+    fseek(file, 0, SEEK_END);
+    uint32_t size = ftell(file);
+    fclose(file);
+    return(size);
+}
+
+
+void mergeToPkg(char *filename)
+{
+
+    std::vector<fileContent> tmpMerge;
+
+    // Go through mdls and images and merge into one file
+    fileContent tmp;
+    int q;
+    for(q=0;q<imgFiles.size();q++) {
+        tmp.size=fileLength(imgFiles[q].c_str());
+        tmp.filename=imgFiles[q];
+        tmpMerge.push_back(tmp);
+    }
+
+    for(q=0;q<mdlFiles.size();q++) {
+        tmp.size=fileLength(mdlFiles[q].c_str());
+        tmp.filename=mdlFiles[q];
+        tmpMerge.push_back(tmp);
+    }
+
+    FILE *file = fopen(filename, "wb");
+
+    if (file==NULL)
+    {
+        printf("Failed open file %s for writing ",filename);
+        exit(1);
+    }
+
+    int numFiles=tmpMerge.size();
+
+    PKG_content *content= (PKG_content *) malloc(4 + numFiles * sizeof(PkgEntry));
+    content->n_files=numFiles;
+    uint32_t offset= 4 + (numFiles * sizeof(PkgEntry));
+
+
+    for(int j=0;j<numFiles;j++)
+    {
+        content->files[j].offset=offset;
+        content->files[j].size=tmpMerge[j].size;
+        strncpy(content->files[j].file,tmpMerge[j].filename.c_str(),32);
+        offset+=content->files[j].size;
+    }
+
+    fwrite(content, (4 + numFiles * sizeof(PkgEntry)), 1,file);
+
+
+    for(q=0;q<numFiles;q++)
+    {
+        FILE *tmpfile = fopen(tmpMerge[q].filename.c_str(), "rb");
+
+        fseek(tmpfile, 0, SEEK_END);
+        uint32_t size = ftell(tmpfile);
+        fseek(tmpfile, 0, SEEK_SET);
+        std::vector<uint8_t> data;
+        data.resize(size);
+        fread(&data[0], size, 1, tmpfile);
+        fwrite(&data[0], size, 1,file);
+
+        fclose(tmpfile);
+    }
+
+    fclose(file);
+
+/*
+    fseek(file, 0, SEEK_END);
+    uint32_t size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    std::vector<uint8_t> data;
+    data.resize(size);
+    fread(&data[0], size, 1, file);
+
+    my_content=(PKG_content *) &data[0];
+
+*/
+}
+
+
+std::string textureFilename(aiMaterial* mat, aiTextureType type)
+{
+    GLboolean skip = false;
+    std::string ret;
+
+    for(GLuint i = 0; i < mat->GetTextureCount(type); i++)
+    {
+        aiString str;
+        mat->GetTexture(type, i, &str);
+        skip = false;
+        // See if it is already in our list
+        for(GLuint j = 0; j < imgFiles.size(); j++)
+        {
+            if(aiString(imgFiles[j]) == str)
+            {
+                skip = true;
+                break;
+            }
+        }
+        if(!skip)
+        {   // If texture hasn't been added to list yet. Add it.
+            ret=std::string(str.C_Str());
+            imgFiles.push_back(ret);  // Add to loaded textures
+        }
+    }
+    return ret;
+}
+
+
 
 
 int main (int argc, char *argv[], char **env_var_ptr)
@@ -404,29 +558,11 @@ int main (int argc, char *argv[], char **env_var_ptr)
 
     uint32_t hash=0;
 
-    Hash_key simplek("AV_MODEL");
+    Hash_key simplek("SIMPLE");
     hash=simplek;
-    printf("AV_MODEL %u\n",hash);
-
-    // Skinned types.....
-
-    Hash_key bkey("STATIC_DECAL");
-    hash=bkey;
-    printf("STATIC_DECAL %u\n",hash);
-
-    /*
-
-    // SIMPLE
-    // BUILDING
-    // AV_MODEL
-    // AV_CS
-    // STATIC_DECAL
-*/
-
+    printf("SIMPLE %u\n",hash);
 
     char *filename=argv[argc-1];
-    int    extractMeshnum=-1;
-
     strcpy(out_filename,filename);
 
 
@@ -459,11 +595,6 @@ int main (int argc, char *argv[], char **env_var_ptr)
       }
 
 
-      if (!strcmp(argv[i],"-m"))
-      {
-          extractMeshnum=atoi(argv[i+1]);
-      }
-
       if (!strcmp(argv[i],"-i"))
       {
           mtlIndex=atoi(argv[i+1]);
@@ -482,9 +613,9 @@ int main (int argc, char *argv[], char **env_var_ptr)
     // Extract base
     char *pExt = strrchr(out_filename, '.');
     if (pExt != NULL)
-        strcpy(pExt, ".mdl");
+        strcpy(pExt, ".pkg");
     else
-        strcat(out_filename, ".mdl");
+        strcat(out_filename, ".pkg");
 
     Assimp::Importer importer;
 
@@ -520,6 +651,7 @@ int main (int argc, char *argv[], char **env_var_ptr)
 
     if (scene->HasMeshes())
         {
+            // Each mesh is extracted to a mdl file.
             for (unsigned int ii = 0; ii < scene->mNumMeshes; ++ii)
             {
                 std::vector<unsigned short int> indexes;
@@ -545,21 +677,110 @@ int main (int argc, char *argv[], char **env_var_ptr)
                     printf("(%f,%f,%f)\n",vrtxTotal[qk].pos[0],vrtxTotal[qk].pos[1],vrtxTotal[qk].pos[2]);
                 }
 
-                printf("Mesh %d Has %d vertices and material %d\n",ii,scene->mMeshes[ii]->mNumVertices,tmp.material);
-                //scene->mMaterials[material]->GetTexture()
-                if (ii==extractMeshnum )
+                //printf("Mesh %d Has %d vertices and material %d\n",ii,scene->mMeshes[ii]->mNumVertices,tmp.material);
+                aiMesh *mesh=scene->mMeshes[ii];
+
+                char Buff[512];
+                sprintf(Buff,"%d-%s.mdl",ii,mesh->mName.C_Str());
+
+                std::string filename;
+
+                if(mesh->mMaterialIndex  >= 0)
                 {
-                    char Buff[512];
-                    sprintf(Buff,"%d-%s",ii,out_filename);
-                    writeToMdlFile(Buff,tmp.vrtx,tmp.indexes,skinned,hash);
+
+                  aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+
+
+                   filename = textureFilename(material,aiTextureType_DIFFUSE);
                 }
+
+                Hash_key key(filename.c_str());
+                hash=key;
+
+
+                writeToMdlFile(Buff,tmp.vrtx,tmp.indexes,skinned,hash);
+                mdlFiles.push_back(std::string(Buff));
+
+
+                if(mesh->mMaterialIndex  >= 0)
+                {
+
+
+
+                    aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+
+                    //textureFilename =
+
+
+                    //vector<Texture> diffuseMaps = this->loadMaterialTextures(material,
+                    //                                    aiTextureType_DIFFUSE, "texture_diffuse");
+                    //textures_loaded.insert(textures_loaded.end(), diffuseMaps.begin(), diffuseMaps.end());
+                    //vector<Texture> specularMaps = this->loadMaterialTextures(material,
+                    //                                    aiTextureType_SPECULAR, "texture_specular");
+                    //textures_loaded.insert(textures_loaded.end(), specularMaps.begin(), specularMaps.end());
+
+                }
+
+
+
+
+                //scene->mMaterials[material]->GetTexture()
+                //if (ii==extractMeshnum )
+                //{
+                //    char Buff[512];
+                //    sprintf(Buff,"%d-%s",ii,out_filename);
+                //    writeToMdlFile(Buff,tmp.vrtx,tmp.indexes,skinned,hash);
+                //}
 
             }
 
-            writeToMdlFile(out_filename,vrtxTotal,indexTotal,skinned,hash);
+            mergeToPkg(out_filename);
+            //writeToMdlFile(out_filename,vrtxTotal,indexTotal,skinned,hash);
 
 
 #if 0
+
+            // This extracts all meshes to a single file :-P
+            if (scene->HasMeshes())
+                {
+                    for (unsigned int ii = 0; ii < scene->mNumMeshes; ++ii)
+                    {
+                        std::vector<unsigned short int> indexes;
+                        t_mesh   tmp;
+                        tmp.indexes.clear();
+                        tmp.vrtx.clear();
+                        tmp.material=0;
+
+                        processMesh(scene->mMeshes[ii],tmp.vrtx,tmp.indexes,tmp.material,skinned);
+                        m_meshes.push_back(tmp);
+
+
+                        int offset=vrtxTotal.size();
+                        for(int q=0;q<tmp.vrtx.size();q++)
+                        {
+                            vrtxTotal.push_back(tmp.vrtx[q]);
+                        }
+                        for(int q=0;q<tmp.indexes.size();q++)
+                        {
+                            indexTotal.push_back(offset+tmp.indexes[q]);
+                            int qk=offset+tmp.indexes[q];
+                            printf("index %d ",offset+tmp.indexes[q]);
+                            printf("(%f,%f,%f)\n",vrtxTotal[qk].pos[0],vrtxTotal[qk].pos[1],vrtxTotal[qk].pos[2]);
+                        }
+
+                        printf("Mesh %d Has %d vertices and material %d\n",ii,scene->mMeshes[ii]->mNumVertices,tmp.material);
+                        //scene->mMaterials[material]->GetTexture()
+                        if (ii==extractMeshnum )
+                        {
+                            char Buff[512];
+                            sprintf(Buff,"%d-%s",ii,out_filename);
+                            writeToMdlFile(Buff,tmp.vrtx,tmp.indexes,skinned,hash);
+                        }
+
+                    }
+
+                    writeToMdlFile(out_filename,vrtxTotal,indexTotal,skinned,hash);
+            }
 
             // All meshes are cached, extract nodes
             if (scene->mRootNode != NULL)

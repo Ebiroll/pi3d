@@ -63,7 +63,7 @@ typedef struct Vector3
 } Vector3_f;
 
 
-#pragma pack(2)
+#pragma pack(1)
 typedef struct lod1
 {
     Vector3_f _abb[2];
