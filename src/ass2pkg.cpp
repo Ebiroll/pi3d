@@ -525,6 +525,12 @@ std::string textureFilename(aiMaterial* mat, aiTextureType type)
     {
         aiString str;
         mat->GetTexture(type, i, &str);
+        std::string test(str.C_Str());
+        if (test[0]=='/' && test[1]=='/') {
+            test=test.substr(2);
+            str.Set(test);
+        }
+
         skip = false;
         // See if it is already in our list
         for(GLuint j = 0; j < imgFiles.size(); j++)
