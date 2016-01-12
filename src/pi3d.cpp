@@ -486,8 +486,8 @@ int main(int argc, char* argv[])
 
       //if (rotating)
       {
-          angleX+=0.00002;
-          angleY+=0.0004;
+          angleX+=0.0002;
+          angleY+=0.004;
       }
 
       model = glm::rotate(model, angleX, glm::vec3(1.0f, 0.0f, 0.1f));

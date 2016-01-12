@@ -5,7 +5,8 @@ CFLAGS+=-DSTANDALONE -DHAVEGLES -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -
 # Remove on banana pi
 # -D BCMHOST
 
-CXXFLAGS+=-DSTANDALONE -DHAVEGLES -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -DTARGET_POSIX -D_LINUX -fPIC -DPIC -D_REENTRANT -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -U_FORTIFY_SOURCE -Wall -g -DHAVE_LIBOPENMAX=2 -DOMX -DOMX_SKIP64BIT -ftree-vectorize -pipe -DUSE_EXTERNAL_OMX -DUSE_EXTERNAL_LIBBCM_HOST -DUSE_VCHIQ_ARM -Wno-psabi -std=c++11 -pthread -DHAVE_LIBBCM_HOST -D BCMHOST   
+CXXFLAGS+=-DSTANDALONE -DHAVEGLES -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -DTARGET_POSIX -D_LINUX -fPIC -DPIC -D_REENTRANT -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -U_FORTIFY_SOURCE -Wall -g -DHAVE_LIBOPENMAX=2 -DOMX -DOMX_SKIP64BIT -ftree-vectorize -pipe -DUSE_EXTERNAL_OMX -DUSE_EXTERNAL_LIBBCM_HOST -DUSE_VCHIQ_ARM -Wno-psabi -std=c++0x -pthread -DHAVE_LIBBCM_HOST -D BCMHOST   
+# -std=c++11 
 
 # Remove on bpi
 # -D BCMHOST
@@ -24,7 +25,7 @@ INCLUDES+=-I/opt/vc/include/ -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc
 all:	pi3d triangle triangle2
 
 pi3d: pi3d.o bcminit.o pipkg.o shader.o hash.o libsoil.a
-        g++  -g  $(LIBFLAGS) -ljpeg -lpthread -lrt -lm  bcminit.o pi3d.o pipkg.o shader.o hash.o libsoil.a  -o pi3d
+	g++  -g  $(LIBFLAGS) -ljpeg -lpthread -lrt -lm  bcminit.o pi3d.o pipkg.o shader.o hash.o libsoil.a  -o pi3d
 
 triangle: triangle.o shader.o
 	g++  -g  $(LIBFLAGS) -lbcm_host -lvchiq_arm -ljpeg -lpthread -lrt -lm  triangle.o shader.o  -o triangle
@@ -46,7 +47,7 @@ shader.o:	src/shader.cpp
 	g++ $(CXXFLAGS) -O2 -fPIC -Wall $(INCLUDEFLAGS)  -c src/shader.cpp
 
 hash.o:	src/hash.cpp
-        g++ $(CXXFLAGS) -O2 -fPIC -Wall $(INCLUDEFLAGS)  -c src/hash.cpp
+	g++ $(CXXFLAGS) -O2 -fPIC -Wall $(INCLUDEFLAGS)  -c src/hash.cpp
 
 
 pipkg.o:	src/pipkg.cpp
