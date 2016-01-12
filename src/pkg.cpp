@@ -30,6 +30,19 @@ typedef struct {
 std::vector<TextureHashMap>  loadedImages;
 
 
+
+GLuint idFromHash(uint32_t  hash) {
+    GLuint ret=0;
+    for (int j=0;j<loadedImages.size();j++)
+    {
+        if (loadedImages[j].hash==hash)
+        {
+            return(loadedImages[j].textureID);
+        }
+    }
+    return ret;
+}
+
 void loadMdl(unsigned char*read_pos,unsigned int length);
 
 
@@ -78,7 +91,7 @@ struct IndexVertex
 };
 
 // Custom format (mdl file)
-void loadSimpleMdl(uint8_t *data,uint32_t size)
+void loadSimpleMdl(uint8_t *data,uint32_t size,mdlGLData *GLdata)
 {
 
     mdl_lod1Header_t *test_header=(mdl_lod1Header_t *)data;
@@ -105,8 +118,9 @@ void loadSimpleMdl(uint8_t *data,uint32_t size)
 
     read_pos+=sizeof(mdl_lod1Header_t);
 
+    GLdata->textureIx=idFromHash(header->texture_hash);
     printf("rend_hash=%d\n",header->render_hash);
-    printf("text_hash=%d\n",header->texture_hash);
+    printf("text_hash=%d,id=%d\n",header->texture_hash,GLdata->textureIx);
 
     uint32_t buffer_size;
     buffer_size=*(uint32_t *)read_pos;
@@ -121,7 +135,7 @@ void loadSimpleMdl(uint8_t *data,uint32_t size)
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
-
+    GLdata->indexVAO=VAO;
 
     printf("buffer size/sizeof(pixel_data) %d\n",buffer_size/sizeof(Vertex_t));
 
@@ -162,7 +176,7 @@ void loadSimpleMdl(uint8_t *data,uint32_t size)
 
 
 // Custom format (mdl file)
-void loadAvMdl(unsigned char*read_pos,unsigned int length)
+void loadAvMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
 {
   mdl_lod1Header_t *header=(mdl_lod1Header_t *)read_pos;
 
@@ -172,6 +186,8 @@ void loadAvMdl(unsigned char*read_pos,unsigned int length)
   printf("Z  %.2f - %.2f\n",header->_abb[0].z,header->_abb[1].z);
   glGenVertexArrays(1, &VAO);
   glBindVertexArray(VAO);
+
+  GLdata->indexVAO=VAO;
 
   read_pos+=sizeof(mdl_lod1Header_t);
 
@@ -280,6 +296,9 @@ int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem)
        char *pExt = strrchr(my_content->files[ix].file, '.');
        if (pExt != NULL)
        {
+           if (ret>40) {
+               return ret;
+           }
           if (strcmp(pExt,".mdl")==0)
           {
               mdl_lod1Header_t *test=(mdl_lod1Header_t *)&data[my_content->files[ix].offset];
@@ -287,15 +306,20 @@ int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem)
               {
                  case SIMPLE_HASH:
                     printf("SIMPLE\n");
-                    loadSimpleMdl(&data[my_content->files[ix].offset],my_content->files[ix].size);
+                    loadSimpleMdl(&data[my_content->files[ix].offset],my_content->files[ix].size,GLdata);
+                    GLdata++;
+                    ret++;
                   break;
                   case BUILDING_HASH:
                     printf("BUILDING_HASH\n");
-                    loadAvMdl(&data[my_content->files[ix].offset],my_content->files[ix].size);
+                    loadAvMdl(&data[my_content->files[ix].offset],my_content->files[ix].size,GLdata);
+                    GLdata++;
+                    ret++;
                   break;
                   case AV_MODEL_HASH:
                     printf("AV_MODEL_HASH\n");
-                    loadAvMdl(&data[my_content->files[ix].offset],my_content->files[ix].size);
+                    loadAvMdl(&data[my_content->files[ix].offset],my_content->files[ix].size,GLdata);
+                    GLdata++;
                   break;
                   case AV_CS_HASH:
                    printf("AV_CS_HASH\n");
@@ -323,6 +347,7 @@ int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem)
           }
       }
    }
+   printf("LOADED!!\n\n");
 
    return ret;
 }

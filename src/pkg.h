@@ -11,6 +11,7 @@ struct mdlGLData {
     GLuint dataVBO;
     GLuint uvVBO;
     GLuint indexVAO;
+    GLuint numIndexes;
     GLuint textureIx;
 };
 

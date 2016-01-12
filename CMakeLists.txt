@@ -60,6 +60,7 @@ soil/stb_image_aug.h
 
 ADD_EXECUTABLE(pi3d
 ${SOIL_SRC}
+src/hash.cpp
 src/Mesh.cpp
 src/main.cpp
 src/pkg.cpp
@@ -80,6 +81,7 @@ src/shader.cpp
 
 #ADD_EXECUTABLE(gles3d
 #${SOIL_SRC}
+#src/hash.cpp
 #src/pi3d.cpp
 #src/pipkg.cpp
 #src/eglstate.h
@@ -97,6 +99,7 @@ src/shader.cpp
 
 ADD_EXECUTABLE(create
 ${SOIL_SRC}
+src/hash.cpp
 src/Mesh.cpp
 src/create.cpp
 src/pkg.cpp

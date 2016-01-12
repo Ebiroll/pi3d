@@ -152,7 +152,9 @@ void printHelp(int argc, char *argv[]) {
 static STATE_T _state, *state = &_state;	// global graphics state
 
 
-mdlGLData dummy;
+#define MAX_MDLS 100
+mdlGLData staticData[MAX_MDLS];
+int gMaxMdl=0;
 
 int main(int argc, char* argv[])
 {
@@ -251,6 +253,7 @@ int main(int argc, char* argv[])
      if (!strcmp(argv[i],"-t"))
      {
          texture1=TextureFromFile(argv[i+1],".",false);
+         staticData[0].textureIx=texture1;
      }
 
    }
@@ -284,9 +287,9 @@ int main(int argc, char* argv[])
    {
       if (strcmp(pExt,".mdl")==0)
       {
-          loadSimple(argv[argc-1],camera,state,&dummy);
+          loadSimple(argv[argc-1],camera,state,&staticData[0]);
       } else if (strcmp(pExt,".pkg")==0) {
-          loadPkg(argv[argc-1],camera,&dummy,0);
+          gMaxMdl=loadPkg(argv[argc-1],camera,&staticData[0],MAX_MDLS);
       }
       else
       {
@@ -400,7 +403,23 @@ while (!glfwWindowShouldClose(window)) {
 
       glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
 
+#if 0
+      if (gMaxMdl>0)
+      {
 
+          for (int q=0;q<gMaxMdl;q++)
+          {
+              //printf("%d\n",q);
+              glActiveTexture(GL_TEXTURE0);
+              glBindTexture(GL_TEXTURE_2D, staticData[q].textureIx);
+              glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);  // Texture unit 0 is for base images.
+
+              glBindVertexArray(staticData[q].indexVAO);
+              glDrawElements(GL_TRIANGLES, staticData[q].numIndexes, GL_UNSIGNED_SHORT, 0);
+
+          }
+      }
+#endif
 
       if (mdl_index_count>0)
       {
