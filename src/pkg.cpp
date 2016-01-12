@@ -30,7 +30,6 @@ typedef struct {
 std::vector<TextureHashMap>  loadedImages;
 
 
-
 GLuint idFromHash(uint32_t  hash) {
     GLuint ret=0;
     for (int j=0;j<loadedImages.size();j++)
@@ -226,6 +225,8 @@ void loadAvMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
   mdl_index_count = buffer_size/2 ;
 
   printf("index count %d\n",mdl_index_count);
+  GLdata->numIndexes=mdl_index_count;
+
 
   //pos=ftell(file);
   read_pos+=4;
@@ -512,6 +513,8 @@ GLuint loadSimple(char *filename,Camera &camera,STATE_T *state,mdlGLData *GLdata
     mdl_index_count = buffer_size/2 ;
 
     printf("index count %d\n",mdl_index_count);
+    GLdata->numIndexes=mdl_index_count;
+
 
     pos=ftell(file);
 

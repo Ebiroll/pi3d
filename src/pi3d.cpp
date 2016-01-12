@@ -279,7 +279,7 @@ GLint TextureFromFile(const char* path, string directory, bool gamma)
     return textureID;
 }
 
-#define MAX_MDLS 20
+#define MAX_MDLS 400
 mdlGLData staticData[MAX_MDLS];
 int gMaxMdl=0;
 
@@ -334,6 +334,7 @@ int main(int argc, char* argv[])
      if (!strcmp(argv[i],"-t"))
      {
          texture1=TextureFromFile(argv[i+1],".",false);
+         staticData[0].textureIx=texture1;
      }
 
    }
@@ -503,8 +504,13 @@ int main(int argc, char* argv[])
       
       for (int q=0;q<gMaxMdl;q++)
       {
-          // Draw mdl :-P
-          //glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);  // Texture unit 0 is for base images.
+
+          // Bind Textures using texture units, Mesh might have loaded a new texture
+          glActiveTexture(GL_TEXTURE0);
+          glBindTexture(GL_TEXTURE_2D, staticData[q].textureIx);
+          //glUniform1i(glGetUniformLocation(shader.Program, "tex"), 0);
+
+
 
           glEnableVertexAttribArray(state->attr_position);
           glBindBuffer(GL_ARRAY_BUFFER, staticData[q].dataVBO);
