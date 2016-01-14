@@ -145,7 +145,7 @@ glm::vec3 center(0.0f, 0.0f, 0.0f);
 void Do_Movement();
 
 // Camera
-Camera camera(glm::vec3(0.0f, 0.0f, 80.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 20.0f));
 
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
@@ -186,6 +186,7 @@ void createSurface(mdlGLData *glData,float zOffset)
 
     mdl_index_count=12;
 
+    glData->numIndexes=12;
 
     simpleVertex_t *ptr= (simpleVertex_t *) &vertices[0];
     for (int j=0;j<(mdl_index_count*3);j+=3)
@@ -388,7 +389,10 @@ int main(int argc, char* argv[])
       }
       else
       {
-         // mesh = new Mesh(argv[argc-1]);
+	 printf("Please specify model to load \n");
+
+         createSurface(&staticData[gMaxMdl],0.0f);
+         gMaxMdl++;
       }
 
    }
@@ -404,14 +408,7 @@ int main(int argc, char* argv[])
 
    }
 
-   //createSurface(&staticData[gMaxMdl],0.0f);
-   //gMaxMdl++;
 
-   //createSurface(&staticData[gMaxMdl],2.0f);
-   //gMaxMdl++;
-
-
-   //setupTestData();
    //glColor4f(0.8f, 0.5f, 0.1f,1.0f);
    //glEnable(GL_BLEND);
    //glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
@@ -437,8 +434,8 @@ int main(int argc, char* argv[])
 
       glm::mat4 view;
       glm::mat4 projection;
-      view = glm::translate(view, glm::vec3(0.0f, 0.0f, -20.0f));
-      projection = glm::perspective(45.0f, (GLfloat)state->screen_width/ (GLfloat) state->screen_height, 0.1f, 100.0f);
+      view = glm::translate(view, glm::vec3(0.0f, 0.0f, -5.0f));
+      projection = glm::perspective(45.0f, (GLfloat)state->screen_width/ (GLfloat) state->screen_height, 0.1f, 1000.0f);
 
     
     while (true) {
@@ -523,7 +520,7 @@ int main(int argc, char* argv[])
           0, // stride
           (void*)0 // array buffer offset
           );
-          check();
+          //check();
 
 
 
@@ -539,12 +536,12 @@ int main(int argc, char* argv[])
           );
 
           glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,staticData[q].indexVAO);
-          glDrawElements(GL_TRIANGLES,mdl_index_count,GL_UNSIGNED_SHORT,0);
+          glDrawElements(GL_TRIANGLES,staticData[q].numIndexes,GL_UNSIGNED_SHORT,0);
 
           //glDrawArrays(GL_TRIANGLES, 0, mdl_index_count);
 
 
-          check();
+          //check();
 
 
            glDisableVertexAttribArray(state->attr_position);

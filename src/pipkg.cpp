@@ -187,7 +187,7 @@ void loadAvMdl(unsigned char* read_pos,unsigned int length,mdlGLData *GLdata)
       //int myix=*indexes;
       int myix=j/3;
 
-      printf("X,Y,Z U,V = %.2f , %.2f , %.2f     %.2f,%.2f\n",ptr[myix].pos[0],ptr[myix].pos[1],ptr[myix].pos[2],ptr[myix].tex[0],ptr[myix].tex[1]);
+      //printf("X,Y,Z U,V = %.2f , %.2f , %.2f     %.2f,%.2f\n",ptr[myix].pos[0],ptr[myix].pos[1],ptr[myix].pos[2],ptr[myix].tex[0],ptr[myix].tex[1]);
       buff_data[j]=ptr[myix].pos[0];
       buff_data[j+1]=ptr[myix].pos[1];
       buff_data[j+2]=ptr[myix].pos[2];
@@ -330,29 +330,32 @@ void loadSimpleMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
 
   uint32_t buffer_size;
   buffer_size=*(uint32_t *)read_pos;
-
+  printf("buffer size/sizeof(pixel_data) %d\n",buffer_size/sizeof(Vertex_t));
+  
   int numVertexes=buffer_size/sizeof(Vertex_t);
-  GLdata->textureIx=idFromHash(header->texture_hash);
-
+  int inx=idFromHash(header->texture_hash);
+  if (inx>0)
+  {  
+    GLdata->textureIx=inx;
+  }   
 
   //for (int i = 0; i < 16; i ++) {
   //        printf(" %2x", read_pos[i]);
   //}
 
   // Vertex data pos
-  size_t pos=read_pos-data;
   read_pos+=4;
-
-
+  size_t pos=read_pos-data;
   read_pos+=buffer_size;
 
   buffer_size=*(uint32_t *)read_pos;
-  mdl_index_count = buffer_size/2 ;
+  //mdl_index_count = buffer_size/2 ;
 
-  printf("index count %d\n",mdl_index_count);
 
-  GLdata->numIndexes=mdl_index_count;
+  GLdata->numIndexes=buffer_size/2;
+  printf("Num Indexes %d\n",GLdata->numIndexes);
 
+  
   read_pos+=4;
   size_t pos_indexes=read_pos-data;
 
@@ -361,7 +364,7 @@ void loadSimpleMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
 
   float *buff_data= (float *)malloc(sizeof(float)*3*numVertexes+1);
   float *uv_data= (float *)malloc(sizeof(float)*2*numVertexes+1);
-  GLushort *indexData=(GLushort *)malloc(sizeof(GLushort)*mdl_index_count+1);
+  GLushort *indexData=(GLushort *)malloc(sizeof(GLushort)*GLdata->numIndexes+1);
 
   Vertex_t *ptr= (Vertex_t *) &data[pos];
   unsigned short int *indexes = (unsigned short int *) &data[pos_indexes];
@@ -371,7 +374,7 @@ void loadSimpleMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
   {
       int myix=j/3;
 
-      printf("X,Y,Z U,V = %.2f , %.2f , %.2f     %.2f,%.2f\n",ptr[myix].pos[0],ptr[myix].pos[1],ptr[myix].pos[2],ptr[myix].tex[0],ptr[myix].tex[1]);
+      //printf("X,Y,Z U,V = %.2f , %.2f , %.2f     %.2f,%.2f\n",ptr[myix].pos[0],ptr[myix].pos[1],ptr[myix].pos[2],ptr[myix].tex[0],ptr[myix].tex[1]);
       buff_data[j]=ptr[myix].pos[0];
       buff_data[j+1]=ptr[myix].pos[1];
       buff_data[j+2]=ptr[myix].pos[2];
@@ -380,7 +383,7 @@ void loadSimpleMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
   // Index data
   indexes = (unsigned short int *) &data[pos_indexes];
   // Index data, straight copy
-  for (j=0;j<(mdl_index_count);j++)
+  for (j=0;j<(GLdata->numIndexes);j++)
   {
       indexData[j]=*indexes;
       indexes++;
@@ -406,13 +409,12 @@ void loadSimpleMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
 
   glGenBuffers(1, &GLdata->indexVAO);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLdata->indexVAO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort)*mdl_index_count, indexData, GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort)*GLdata->numIndexes, indexData, GL_STATIC_DRAW);
 
 
-//  free(buff_data);
-//  free(uv_data);
-//  free(indexData);
-
+  free(buff_data);
+  free(uv_data);
+  free(indexData);
 
 
 }
@@ -531,12 +533,6 @@ int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem)
                  break;
 
               }
-
-              /*
-              loadPkgMdl(&data[my_content->files[ix].offset],my_content->files[ix].size,GLdata);
-              GLdata++;
-              ret++;
-              */
           }
       }
    }
@@ -573,7 +569,15 @@ GLuint loadSimple(char *filename,Camera &camera,STATE_T* state,mdlGLData *GLdata
     fread(&data[0], size, 1, file);
     mdl_lod1Header_t *test_header=(mdl_lod1Header_t *)&data[0];
 
+    Camera ca(glm::vec3(0.0f,0.0f,80.0f));
+    camera=ca;
 
+
+    // Equivalent....
+    loadSimpleMdl(&data[0],size,GLdata);
+    return 1;
+    
+    
     fclose(file);
     file=fopen(filename, "rb");
 
@@ -581,11 +585,14 @@ GLuint loadSimple(char *filename,Camera &camera,STATE_T* state,mdlGLData *GLdata
     // printf("Heder size= %d",sizeof(mdl_lod1Header_t));
 
     unsigned char*read_pos=&data[0];
-
-
     mdl_lod1Header_t header;
     fread(&header,sizeof(mdl_lod1Header_t),1,file);
 
+
+    printf("rend_hash=%d\n",header.render_hash);
+    printf("text_hash=%d\n",header.texture_hash);
+
+    
     //if (header.nlods!=1) {
     //    printf("Only nlods ==1 supported\n");
     //    exit(-1);
@@ -601,8 +608,6 @@ GLuint loadSimple(char *filename,Camera &camera,STATE_T* state,mdlGLData *GLdata
 
     //center=tmp;
 
-    Camera ca(glm::vec3(0.0f,0.0f,80.0f));
-    camera=ca;
 
 
     // Part of header
@@ -630,7 +635,8 @@ GLuint loadSimple(char *filename,Camera &camera,STATE_T* state,mdlGLData *GLdata
     mdl_index_count = buffer_size/2 ;
     //numVertexes=mdl_index_count;
 
-    printf("index count %d\n",mdl_index_count);
+    printf("Num index .. %d\n",mdl_index_count);
+    GLdata->numIndexes=buffer_size/2;
 
     int pos_indexes=ftell(file);
 
@@ -649,7 +655,7 @@ GLuint loadSimple(char *filename,Camera &camera,STATE_T* state,mdlGLData *GLdata
         int myix=j/3;
         indexData[myix]=*indexes;
 
-        printf("X,Y,Z U,V = %.2f , %.2f , %.2f     %.2f,%.2f\n",ptr[myix].pos[0],ptr[myix].pos[1],ptr[myix].pos[2],ptr[myix].tex[0],ptr[myix].tex[1]);
+        //printf("X,Y,Z U,V = %.2f , %.2f , %.2f     %.2f,%.2f\n",ptr[myix].pos[0],ptr[myix].pos[1],ptr[myix].pos[2],ptr[myix].tex[0],ptr[myix].tex[1]);
         buff_data[j]=ptr[myix].pos[0];
         buff_data[j+1]=ptr[myix].pos[1];
         buff_data[j+2]=ptr[myix].pos[2];
@@ -690,9 +696,9 @@ GLuint loadSimple(char *filename,Camera &camera,STATE_T* state,mdlGLData *GLdata
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLdata->indexVAO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort)*numVertexes*3, indexData, GL_STATIC_DRAW);
 
-    //  free(buff_data);
-    //  free(uv_data);
-    //  free(indexData);
+    free(buff_data);
+    free(uv_data);
+    free(indexData);
 
 
     return 1;
