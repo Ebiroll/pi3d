@@ -121,7 +121,7 @@ void writeToMdlFile(char *filename , std::vector<Vertex_t> data,std::vector<unsi
      printf("Total %d indexes %d triangles\n",index_size/2,index_size/6);
      fwrite(&index_size,sizeof(uint32_t),1,ofile);
 
-     fwrite(&indexes[0],1,index_size,ofile);
+     fwrite(&indexes[0],index_size,1,ofile);
 
  }
  else
@@ -315,17 +315,20 @@ bool processMesh(aiMesh *mesh,std::vector<Vertex_t> &ret,std::vector<unsigned sh
                 tmp.tex[0]=tex.x;
                 tmp.tex[1]=tex.y;
 
-                indexes.push_back(ret.size());
                 ret.push_back(tmp);
 
             //printf("---%d",face->mIndices[0]);
         }
 
-    }
+
+
+        //                 indexes.push_back(ret.size());
 
 
 
- #if 0
+
+
+
         for (uint t = 0; t < mesh->mNumFaces; ++t)
         {
             aiFace* face = &mesh->mFaces[t];
@@ -362,7 +365,6 @@ bool processMesh(aiMesh *mesh,std::vector<Vertex_t> &ret,std::vector<unsigned sh
         }
 
     }
-#endif
 
     printf("%d indexes\n",indexes.size());
 
