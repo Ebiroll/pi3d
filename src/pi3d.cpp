@@ -145,7 +145,7 @@ glm::vec3 center(0.0f, 0.0f, 0.0f);
 void Do_Movement();
 
 // Camera
-Camera camera(glm::vec3(0.0f, 0.0f, 20.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 10.0f));
 
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
@@ -196,7 +196,6 @@ void createSurface(mdlGLData *glData,float zOffset)
         buff_data[j]=ptr[myix].pos[0];
         buff_data[j+1]=ptr[myix].pos[1];
         buff_data[j+2]=ptr[myix].pos[2]+zOffset;
-
     }
 
     for (int j=0;j<(mdl_index_count*2);j+=2)
@@ -220,8 +219,6 @@ void createSurface(mdlGLData *glData,float zOffset)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glData->indexVAO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort)*numVertexes, indexes, GL_STATIC_DRAW);
     check();
-
-
 
 }
 
@@ -370,9 +367,6 @@ int main(int argc, char* argv[])
    glBindAttribLocation (shader.Program, 0, "position");
    glBindAttribLocation (shader.Program, 1, "vtex");
 
-   // glBindAttribLocation(program, 0, "pos");
-   
-   //strcpy(out_filename,filename);
 
    char *pExt = strrchr(argv[argc-1], '.');
 
@@ -394,7 +388,6 @@ int main(int argc, char* argv[])
          createSurface(&staticData[gMaxMdl],0.0f);
          gMaxMdl++;
       }
-
    }
    else
    {
@@ -416,9 +409,7 @@ int main(int argc, char* argv[])
    printf("index count %d\n",mdl_index_count);
    check();
 
-
    float time=0.0f;
-
 
     shader.Use();
     check();
@@ -432,16 +423,13 @@ int main(int argc, char* argv[])
     printf("mvp projection at %d\n", mvpLoc);
 
 
-      glm::mat4 view;
-      glm::mat4 projection;
-      view = glm::translate(view, glm::vec3(0.0f, 0.0f, -5.0f));
-      projection = glm::perspective(45.0f, (GLfloat)state->screen_width/ (GLfloat) state->screen_height, 0.1f, 1000.0f);
+    glm::mat4 view;
+    glm::mat4 projection;
+    view = glm::translate(view, glm::vec3(0.0f, -2.0f, -8.0f));
+    projection = glm::perspective(45.0f, (GLfloat)state->screen_width/ (GLfloat) state->screen_height, 0.1f, 1000.0f);
 
     
-    while (true) {
-
-
-     
+    while (true) {     
       // Set frame time
       GLfloat currentFrame = time;
       deltaTime = currentFrame - lastFrame;
@@ -461,30 +449,16 @@ int main(int argc, char* argv[])
       shader.Use();
       check();
 
-      // Check and call events
-      //glfwPollEvents();
-      //Do_Movement();
 
-
-      // Create transformations
-
-      // Get their uniform location
-      //projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeigth, 0.1f, 100.0f);
-      //view = camera.GetViewMatrix();
-
-      //GLint modelLoc = glGetUniformLocation(shader.Program, "model");
-      //GLint viewLoc = glGetUniformLocation(shader.Program, "view");
-      //GLint projLoc = glGetUniformLocation(shader.Program, "projection");
       GLint mvpLoc = glGetUniformLocation(shader.Program, "mvp");
       check();
       
-
       glm::mat4 model;
       //model = glm::translate(model, center);
 
       //if (rotating)
       {
-          angleX+=0.0002;
+          angleX+=0.0004;
           angleY+=0.004;
       }
 
@@ -557,67 +531,7 @@ int main(int argc, char* argv[])
 return 0;
 }
 
-#pragma region "User input"
-#if 0
- 
-// Moves/alters the camera positions based on user input
-void Do_Movement()
-{
-    // Camera controls
-    if(keys[GLFW_KEY_W])
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if(keys[GLFW_KEY_S])
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if(keys[GLFW_KEY_A])
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if(keys[GLFW_KEY_D])
-        camera.ProcessKeyboard(RIGHT, deltaTime);
-}
 
-// Is called whenever a key is pressed/released via GLFW
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
-{
-    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GL_TRUE);
-
-    if(action == GLFW_PRESS)
-        keys[key] = true;
-    else if(action == GLFW_RELEASE)
-        keys[key] = false;
-}
-
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{
-    if(firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    GLfloat xoffset = xpos - lastX;
-    GLfloat yoffset = lastY - ypos;
-
-    lastX = xpos;
-    lastY = ypos;
-
-
-    rotating=false;
-    angleX+=yoffset/45.0f;
-    angleY+=xoffset/45.0f;
-
-    //camera.ProcessMouseMovement(xoffset, yoffset);
-}
-
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    camera.ProcessMouseScroll(yoffset);
-    //printf("scroll\n");
-}
- 
-#endif
- 
-#pragma endregion
 
 
 

@@ -118,6 +118,7 @@ src/hash.cpp
 src/ass2pkg.cpp
 )
 
+OPTION(ASSIMP_BUILD_TESTS "assimp tests" OFF)
 
 add_subdirectory(assimp)
 #add_subdirectory(glfw)

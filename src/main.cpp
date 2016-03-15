@@ -218,10 +218,6 @@ int main(int argc, char* argv[])
    }
 
 
-
-
-
-
    // Set the required callback functions
    glfwSetKeyCallback(window, key_callback);
    glfwSetCursorPosCallback(window, mouse_callback);
@@ -262,12 +258,9 @@ int main(int argc, char* argv[])
    sprintf(fragment_shader,"%s.frag",shader_base);
    sprintf(geometry_shader,"%s.geom",shader_base);
 
-
-
    // Setup and compile our shaders
    Shader shader(vertex_shader, fragment_shader,geometry_shader);
    //Shader shader("shader.vert", "shader.frag");
-
 
    // This binds the attrib opengl 2.1 stuff
    glBindAttribLocation (shader.Program, 0, "position");
@@ -305,7 +298,6 @@ int main(int argc, char* argv[])
    }
 
 
-
    if (mesh)
    {
        for(int j=0;j<mesh->textures_loaded.size();j++)
@@ -316,17 +308,11 @@ int main(int argc, char* argv[])
    }
 
 
-
-
    //setupTestData();
-
-
    glColor3f(0.8f, 0.1f, 0.1f);
 
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-
-
 
    shader.linkProg();
    shader.Use();
