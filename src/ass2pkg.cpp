@@ -296,7 +296,7 @@ bool processMesh(aiMesh *mesh,std::vector<Vertex_t> &ret,std::vector<unsigned sh
         printf ("Has %d vertices\n",mesh->mNumVertices);
         printf ("Has %d faces\n",mesh->mNumFaces);
         Vertex_t    tmp;
-
+#if 0
         for (uint t = 0; t < mesh->mNumVertices; t++)
         {
                 aiVector3D &vec = mesh->mVertices[t];
@@ -315,19 +315,16 @@ bool processMesh(aiMesh *mesh,std::vector<Vertex_t> &ret,std::vector<unsigned sh
                 tmp.tex[0]=tex.x;
                 tmp.tex[1]=tex.y;
 
-                ret.push_back(tmp);
+                // indexes.push_back(ret.size());
+                // ret.push_back(tmp);
 
             //printf("---%d",face->mIndices[0]);
         }
 
+#endif
 
 
-        //                 indexes.push_back(ret.size());
-
-
-
-
-
+        // Add all vertices that are part of a face
 
         for (uint t = 0; t < mesh->mNumFaces; ++t)
         {
@@ -342,7 +339,6 @@ bool processMesh(aiMesh *mesh,std::vector<Vertex_t> &ret,std::vector<unsigned sh
             {
                 aiVector3D &vec = mesh->mVertices[face->mIndices[ii]];
                 aiVector3D &norm = mesh->mNormals[face->mIndices[ii]];
-                aiVector3D tex = mesh->mTextureCoords[0][face->mIndices[ii]];
                 unsigned int numUV=mesh->mNumUVComponents[face->mIndices[ii]];
                 Vertex_t    tmp;
 
@@ -354,8 +350,17 @@ bool processMesh(aiMesh *mesh,std::vector<Vertex_t> &ret,std::vector<unsigned sh
                 tmp.norm[1]=norm.y;
                 tmp.norm[2]=norm.z;
 
-                tmp.tex[0]=tex.x;
-                tmp.tex[1]=tex.y;
+                if (mesh->HasTextureCoords(0)) {
+                    aiVector2D tex(mesh->mTextureCoords[0][face->mIndices[ii]].x,mesh->mTextureCoords[0][face->mIndices[ii]].y);
+                    tmp.tex[0]=tex.x;
+                    tmp.tex[1]=tex.y;
+                }
+                else
+                {
+                    printf ("** MISSING UV coord %d in mesh %s**\n",numUV,mesh->mName.C_Str());
+                    tmp.tex[0]=0.0f;
+                    tmp.tex[1]=0.0f;
+                }
 
                 indexes.push_back(ret.size());
                 ret.push_back(tmp);
