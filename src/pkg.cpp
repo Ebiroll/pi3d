@@ -135,7 +135,7 @@ void loadSimpleMdl(uint8_t *data,uint32_t size,mdlGLData *GLdata)
     glBindVertexArray(VAO);
     GLdata->indexVAO=VAO;
 
-    printf("buffer size/sizeof(pixel_data) %d\n",buffer_size/sizeof(Vertex_t));
+    printf("buff_size,buffer size/sizeof(pixel_data) %d\n",buffer_size,buffer_size/sizeof(Vertex_t));
 
     //int pos=ftell(file);
 
@@ -195,26 +195,29 @@ void loadAvMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
   GLdata->indexVAO=VAO;
 
   read_pos+=sizeof(mdl_lod1Header_t);
+  read_pos+=4;
 
-  printf("rend_hash=%d\n",header->render_hash);
+
+  printf("------ rend_hash=%d\n",header->render_hash);
   printf("text_hash=%d\n",header->texture_hash);
 
   uint32_t buffer_size;
-  buffer_size=*(uint32_t *)read_pos;
+  buffer_size=*((uint32_t *)read_pos);
+  read_pos+=4;
+
   //fread(&buffer_size, 4,1,file);
+  //buffer_size=header->texture_hash;
+  printf("buffer %d buffer size/sizeof(pixel_data) %d\n",buffer_size,buffer_size/sizeof(Skinned_Vertex_t));
 
-  buffer_size=header->texture_hash;
-  printf("buffer %d size/sizeof(pixel_data) %d\n",buffer_size,buffer_size/sizeof(Vertex_t));
-
-  for (int i = 0; i < 16; i ++) {
-          printf(" %2x", read_pos[i]);
-  }
+  //for (int i = 0; i < 16; i ++) {
+  //        printf(" %2x", read_pos[i]);
+  //}
 
   printf("length=%d\n",length);
 
   //exit(1);
 
-  //read_pos+=4;
+
 
 
   GLuint vb;
@@ -226,13 +229,20 @@ void loadAvMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
   //fread(&buffer_size, 4,1,file);
   read_pos+=buffer_size;
 
+
+
+  for (int i = 0; i < 16; i ++) {
+          printf(" %2x", read_pos[i]);
+  }
+
   buffer_size=*(uint32_t *)read_pos;
   //mdl_index_count = buffer_size/2 ;
 
+
+
+
   printf("index count %d\n",buffer_size/2);
   GLdata->numIndexes=buffer_size/2;
-
-
   //pos=ftell(file);
   read_pos+=4;
 
@@ -243,7 +253,6 @@ void loadAvMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
 
   //fseek(file,pos + buffer_size,SEEK_SET);
   //s->seek(s->offset() + buffer_size);
-
 
 
   glEnableVertexAttribArray(0);
@@ -300,12 +309,15 @@ int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem)
        printf("nxt=%d\n",my_content->files[ix].offset + my_content->files[ix].size);
 
        char *pExt = strrchr(my_content->files[ix].file, '.');
-       if (pExt != NULL)
+       if (true /*pExt != NULL*/)
        {
+           if (pExt==NULL) {
+               pExt=".tst";
+           }
            if (ret>40) {
                return ret;
            }
-          if (strcmp(pExt,".mdl")==0)
+          if ((strcmp(pExt,".mdl")==0) || (strcmp(my_content->files[ix].file,"DH8D")==0))
           {
               mdl_lod1Header_t *test=(mdl_lod1Header_t *)&data[my_content->files[ix].offset];
               switch(test->render_hash)
@@ -334,6 +346,9 @@ int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem)
                  case STATIC_DECAL_HASH:
                    printf("STATIC_DECAL_HASH\n");
                  break;
+                  default:
+                    printf("UNKNOWN_HASH\n");
+                  break;
 
               }
 

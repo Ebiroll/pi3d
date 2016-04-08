@@ -138,14 +138,16 @@ void loadAvMdl(unsigned char* read_pos,unsigned int length,mdlGLData *GLdata)
 
 
   read_pos+=sizeof(mdl_lod1Header_t);
+  read_pos+=4;
 
   printf("rend_hash=%u\n",header->render_hash);
   printf("text_hash=%u\n",header->texture_hash);
 
   uint32_t buffer_size;
-
-  buffer_size=header->texture_hash;
-  printf("buffer %d size/sizeof(pixel_data) %d\n",buffer_size,buffer_size/sizeof(Skinned_Vertex_t));
+  buffer_size=*((uint32_t *)read_pos);
+  read_pos+=4;
+  //buffer_size=header->texture_hash;
+  printf("buffer %d buffer size/sizeof(pixel_data) %d\n",buffer_size,buffer_size/sizeof(Skinned_Vertex_t));
 
   int numVertexes=buffer_size/sizeof(Skinned_Vertex_t);
 
@@ -154,6 +156,8 @@ void loadAvMdl(unsigned char* read_pos,unsigned int length,mdlGLData *GLdata)
   //}
 
   printf("length=%d\n",length);
+
+
 
   size_t pos=read_pos-data;
 
