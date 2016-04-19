@@ -151,9 +151,9 @@ void loadAvMdl(unsigned char* read_pos,unsigned int length,mdlGLData *GLdata)
 
   int numVertexes=buffer_size/sizeof(Skinned_Vertex_t);
 
-  //for (int i = 0; i < 16; i ++) {
-  //        printf(" %2x", read_pos[i]);
-  //}
+  for (int i = 0; i < 16; i ++) {
+          printf(" %2x", read_pos[i]);
+  }
 
   printf("length=%d\n",length);
 

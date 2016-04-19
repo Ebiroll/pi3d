@@ -195,11 +195,21 @@ void loadAvMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
   GLdata->indexVAO=VAO;
 
   read_pos+=sizeof(mdl_lod1Header_t);
+
+
+  printf("------ rend_hash=%u\n",header->render_hash);
+  printf("text_hash=%u\n",header->texture_hash);
+
   read_pos+=4;
 
+  header->texture_hash=*((uint32_t *)read_pos);
+  printf("text_hash=%u\n",header->texture_hash);
 
-  printf("------ rend_hash=%d\n",header->render_hash);
-  printf("text_hash=%d\n",header->texture_hash);
+  read_pos+=4;
+
+  GLdata->textureIx=idFromHash(header->texture_hash);
+  printf("textureIx=%u\n",GLdata->textureIx);
+  GLdata->textureIx=1;
 
   uint32_t buffer_size;
   buffer_size=*((uint32_t *)read_pos);
@@ -207,11 +217,11 @@ void loadAvMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
 
   //fread(&buffer_size, 4,1,file);
   //buffer_size=header->texture_hash;
-  printf("buffer %d buffer size/sizeof(pixel_data) %d\n",buffer_size,buffer_size/sizeof(Skinned_Vertex_t));
+  printf("buffer %u buffer size/sizeof(pixel_data) %d\n",buffer_size,buffer_size/sizeof(Skinned_Vertex_t));
 
-  //for (int i = 0; i < 16; i ++) {
-  //        printf(" %2x", read_pos[i]);
-  //}
+  for (int i = 0; i < 16; i ++) {
+          printf(" %2x", read_pos[i]);
+  }
 
   printf("length=%d\n",length);
 
@@ -228,7 +238,6 @@ void loadAvMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
   //fseek(file,pos + buffer_size,SEEK_SET);
   //fread(&buffer_size, 4,1,file);
   read_pos+=buffer_size;
-
 
 
   for (int i = 0; i < 16; i ++) {
