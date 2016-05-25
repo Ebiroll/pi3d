@@ -138,10 +138,18 @@ void loadAvMdl(unsigned char* read_pos,unsigned int length,mdlGLData *GLdata)
 
 
   read_pos+=sizeof(mdl_lod1Header_t);
-  read_pos+=4;
 
   printf("rend_hash=%u\n",header->render_hash);
   printf("text_hash=%u\n",header->texture_hash);
+
+  read_pos+=4;
+
+
+  read_pos+=4;
+
+  GLdata->textureIx=idFromHash(header->texture_hash);
+  printf("textureIx=%u\n",GLdata->textureIx);
+  GLdata->textureIx=1;
 
   uint32_t buffer_size;
   buffer_size=*((uint32_t *)read_pos);
