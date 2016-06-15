@@ -75,6 +75,16 @@ typedef struct lod1
 
 
 
+typedef struct avmod
+{
+    Vector3_f _abb[2];
+    uint16_t  lod[4];
+    char      name[32];
+    uint32_t  render_hash;
+    uint32_t  attribs;
+    uint32_t  texture_hash0;
+    uint32_t  texture_hash1;
+} av_mdlHeader_t;
 
 
 

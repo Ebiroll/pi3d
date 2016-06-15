@@ -183,7 +183,8 @@ void loadSimpleMdl(uint8_t *data,uint32_t size,mdlGLData *GLdata)
 // Custom format (mdl file)
 void loadAvMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
 {
-  mdl_lod1Header_t *header=(mdl_lod1Header_t *)read_pos;
+
+  av_mdlHeader_t *header=(av_mdlHeader_t *)read_pos;
 
 
   printf("X  %.2f - %.2f\n",header->_abb[0].x,header->_abb[1].x);
@@ -194,22 +195,17 @@ void loadAvMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
 
   GLdata->indexVAO=VAO;
 
-  read_pos+=sizeof(mdl_lod1Header_t);
-
+  read_pos+=sizeof(av_mdlHeader_t);
 
   printf("------ rend_hash=%u\n",header->render_hash);
-  printf("text_hash=%u\n",header->texture_hash);
+  printf("attribs=%u\n",header->attribs);
+  printf("text_hash0=%u\n",header->texture_hash0);
+  printf("text_hash1=%u\n",header->texture_hash1);
 
-  read_pos+=4;
 
-  header->texture_hash=*((uint32_t *)read_pos);
-  printf("text_hash=%u\n",header->texture_hash);
-
-  read_pos+=4;
-
-  GLdata->textureIx=idFromHash(header->texture_hash);
+  GLdata->textureIx=idFromHash(header->texture_hash0);
   printf("textureIx=%u\n",GLdata->textureIx);
-  GLdata->textureIx=1;
+
 
   uint32_t buffer_size;
   buffer_size=*((uint32_t *)read_pos);

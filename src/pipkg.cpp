@@ -127,8 +127,7 @@ struct IndexVertex
 // Custom format (mdl file)
 void loadAvMdl(unsigned char* read_pos,unsigned int length,mdlGLData *GLdata)
 {
-  mdl_lod1Header_t *header=(mdl_lod1Header_t *)read_pos;
-
+  av_mdlHeader_t *header=(av_mdlHeader_t *)read_pos;
 
   printf("--loadAvMdl--\nX  %.2f - %.2f\n",header->_abb[0].x,header->_abb[1].x);
   printf("Y  %.2f - %.2f\n",header->_abb[0].y,header->_abb[1].y);
@@ -136,16 +135,12 @@ void loadAvMdl(unsigned char* read_pos,unsigned int length,mdlGLData *GLdata)
 
   unsigned char* data=read_pos;
 
+  read_pos+=sizeof(av_mdlHeader_t);
 
-  read_pos+=sizeof(mdl_lod1Header_t);
+  printf("attribs=%u\n",header->attribs);
+  printf("text_hash0=%u\n",header->texture_hash0);
+  printf("text_hash1=%u\n",header->texture_hash1);
 
-  printf("rend_hash=%u\n",header->render_hash);
-  printf("text_hash=%u\n",header->texture_hash);
-
-  read_pos+=4;
-
-
-  read_pos+=4;
 
   GLdata->textureIx=idFromHash(header->texture_hash);
   printf("textureIx=%u\n",GLdata->textureIx);
