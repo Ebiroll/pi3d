@@ -66,17 +66,22 @@ typedef struct Vector3
 #pragma pack(1)
 typedef struct lod1
 {
+    uint32_t  version;
+    uint32_t  flags;
     Vector3_f _abb[2];
     uint16_t  lod[4];
     char      name[32];
     uint32_t  render_hash;
     uint32_t  texture_hash;
+    uint32_t  attribs;
 } mdl_lod1Header_t;
 
 
 
 typedef struct avmod
 {
+    uint32_t  version;
+    uint32_t  flags;
     Vector3_f _abb[2];
     uint16_t  lod[4];
     char      name[32];
