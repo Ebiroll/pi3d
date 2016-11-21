@@ -11,6 +11,12 @@
 #include "pkg.h"
 
 
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <pthread.h>
+
 // GL includes
 #include "shader.h"
 #include "camera.h"
@@ -135,6 +141,36 @@ GLfloat angleY=0.0;
 
 bool rotating=true;
 
+// This connects to a ESP8266 with the sketch loaded in the sketch direcory
+// https://learn.adafruit.com/bno055-absolute-orientation-sensor-with-raspberry-pi-and-beaglebone-black/hardware?view=all
+void *connection_handler(void *dummy);
+
+
+char *sensor_adress;
+
+// This connects to the 
+void *connection_handler(void *dummy)
+{
+    int socket_desc , client_sock , c , *new_sock;
+    struct sockaddr_in server , client;
+     
+    //Create socket
+    socket_desc = socket(AF_INET , SOCK_STREAM , 0);
+    if (socket_desc == -1)
+    {
+        printf("Could not create socket");
+    } else {
+        int enable = 1;
+        if (setsockopt(socket_desc, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+            printf("setsockopt(SO_REUSEADDR) failed");
+    }
+    puts("Socket created");
+     
+    //Prepare the sockaddr_in structure
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = INADDR_ANY;
+    server.sin_port = htons( 8888 );
+}
 
 
 void printHelp(int argc, char *argv[]) {
@@ -171,6 +207,16 @@ int main(int argc, char* argv[])
   {
       printHelp(argc,argv);
   }
+
+  // Start connection thread
+  pthread_t pconnection_thread;
+    
+  printf("creating socket thread\n");
+  if( pthread_create( &pconnection_thread , NULL ,  connection_handler , (void*) NULL) < 0)
+  {
+    printf("Failed to create connection thread\n");
+  }
+
 
   int ret=glfwInit();
    if (!ret)
