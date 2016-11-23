@@ -140,6 +140,10 @@ GLuint VBO, VAO;
 int mdl_index_count=-1;
 
 
+GLfloat offsetAngleX=0.0;
+GLfloat offsetAngleY=0.0;
+
+
 GLfloat angleX=0.0;
 GLfloat angleY=0.0;
 GLfloat angleZ=0.0;
@@ -207,8 +211,7 @@ void *connection_handler(void *dummy)
        sscanf(buffer,"%f,%f,%f",&x,&y,&z);
        angleX=M_PI*(x+90.0f)/180.0f;
        angleY=M_PI*y/180.0f;
-       angleZ=M_PI*z/180.0f;
- 
+       angleZ=2*M_PI*z/360.0f;
        bzero(buffer,256);
        n = read(socket_desc, buffer, 255);
    }
@@ -472,8 +475,8 @@ while (!glfwWindowShouldClose(window)) {
 
 
       model = glm::rotate(model, angleZ, glm::vec3(1.0f, 0.0f, 0.0f));
-      model = glm::rotate(model, -angleX, glm::vec3(0.0f, 1.0f, 0.0f));
-      model = glm::rotate(model, -angleY, glm::vec3(0.0f, 0.0f, 1.0f));
+      model = glm::rotate(model, -1*angleX+offsetAngleX, glm::vec3(0.0f, 1.0f, 0.0f));
+      model = glm::rotate(model, -angleY+offsetAngleY, glm::vec3(0.0f, 0.0f, 1.0f));
 
 
 /*
@@ -544,8 +547,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
 
-    if(action == GLFW_PRESS)
+    if(action == GLFW_PRESS) {
         keys[key] = true;
+        if (key=GLFW_KEY_A) {
+            offsetAngleX+=5;
+        }
+        if (key=GLFW_KEY_D) {
+            offsetAngleX-=5;
+        }
+    }
     else if(action == GLFW_RELEASE)
         keys[key] = false;
 }
@@ -562,13 +572,16 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     GLfloat xoffset = xpos - lastX;
     GLfloat yoffset = lastY - ypos;
 
+    offsetAngleX+=xoffset*M_PI/180.f;
+    offsetAngleY+=yoffset*M_PI/180.f;
+
     lastX = xpos;
     lastY = ypos;
 
 
     rotating=false;
-    angleX+=yoffset/45.0f;
-    angleY+=xoffset/45.0f;
+    //angleX+=yoffset/45.0f;
+    //angleY+=xoffset/45.0f;
 
     //camera.ProcessMouseMovement(xoffset, yoffset);
 }
