@@ -21,9 +21,9 @@
 #include <ESP8266WiFi.h>
 
 //how many clients should be able to telnet to this ESP8266
-#define MAX_SRV_CLIENTS 1
-const char* ssid = "**********";
-const char* password = "**********";
+#define MAX_SRV_CLIENTS 10
+const char* ssid =            //"**********";
+const char* password =        //"**********";
 
 WiFiServer server(10023);
 WiFiClient serverClients[MAX_SRV_CLIENTS];
@@ -126,44 +126,14 @@ void setup() {
 void BunnyLoop(void)
 {
   /* Get a new sensor event */
-  sensors_event_t event;
-  bno.getEvent(&event);
 
-  /* Board layout:
-         +----------+
-         |         *| RST   PITCH  ROLL  HEADING
-     ADR |*        *| SCL
-     INT |*        *| SDA     ^            /->
-     PS1 |*        *| GND     |            |
-     PS0 |*        *| 3VO     Y    Z-->    \-X
-         |         *| VIN
-         +----------+
-  */
-
-  /* The processing sketch expects data as roll, pitch, heading */
-  Serial.print(F("Orientation: "));
-  Serial.print((float)event.orientation.x);
-  Serial.print(F(" "));
-  Serial.print((float)event.orientation.y);
-  Serial.print(F(" "));
-  Serial.print((float)event.orientation.z);
-  Serial.println(F(""));
-
-  /* Also send calibration data for each sensor. */
-  uint8_t sys, gyro, accel, mag = 0;
-  bno.getCalibration(&sys, &gyro, &accel, &mag);
-  Serial.print(F("Calibration: "));
-  Serial.print(sys, DEC);
-  Serial.print(F(" "));
-  Serial.print(gyro, DEC);
-  Serial.print(F(" "));
-  Serial.print(accel, DEC);
-  Serial.print(F(" "));
-  Serial.println(mag, DEC);
-
-  delay(BNO055_SAMPLERATE_DELAY_MS);
 }
+
+ char Buff[512];
+
 void loop() {
+  while (true) 
+  {
   uint8_t i;
   //check if there are any new clients
   if (server.hasClient()){
@@ -183,23 +153,59 @@ void loop() {
   //check clients for data
   for(i = 0; i < MAX_SRV_CLIENTS; i++){
     if (serverClients[i] && serverClients[i].connected()){
-      if(serverClients[i].available()){
-        //get data from the telnet client and push it to the UART
-        while(serverClients[i].available()) Serial.write(serverClients[i].read());
+      while(serverClients[i].connected()) 
+      {
+        sensors_event_t event;
+        bno.getEvent(&event);
+
+        /* Board layout:
+              +----------+
+              |         *| RST   PITCH  ROLL  HEADING
+          ADR |*        *| SCL
+          INT |*        *| SDA     ^            /->
+          PS1 |*        *| GND     |            |
+          PS0 |*        *| 3VO     Y    Z-->    \-X
+              |         *| VIN
+              +----------+
+        */
+        Buff[0]=0;
+
+        // No floats in sprintf
+        //sprintf(Buff,"%f,%f,%f\n",,(float)event.orientation.y,(float)event.orientation.z);
+        dtostrf((float)event.orientation.x,12,10,&Buff[strlen(Buff)]);
+        strcat(Buff,",");
+        dtostrf((float)event.orientation.y,12,10,&Buff[strlen(Buff)]);
+        strcat(Buff,",");
+        dtostrf((float)event.orientation.z,12,10,&Buff[strlen(Buff)]);
+        strcat(Buff,"\n");
+        
+        /* The processing sketch expects data as roll, pitch, heading */
+        //Serial.print(F("Orientation: "));
+        //Serial.print((float)event.orientation.x);
+        //Serial.print(F(" "));
+        //Serial.print((float)event.orientation.y);
+        //Serial.print(F(" "));
+        //Serial.print((float)event.orientation.z);
+        //Serial.println(F(""));
+        serverClients[i].write((uint8_t *)Buff, strlen(Buff));
+
+/*
+        // Also send calibration data for each sensor.
+        uint8_t sys, gyro, accel, mag = 0;
+        bno.getCalibration(&sys, &gyro, &accel, &mag);
+        Serial.print(F("Calibration: "));
+        Serial.print(sys, DEC);
+        Serial.print(F(" "));
+        Serial.print(gyro, DEC);
+        Serial.print(F(" "));
+        Serial.print(accel, DEC);
+        Serial.print(F(" "));
+        Serial.println(mag, DEC);
+*/
+        delay(BNO055_SAMPLERATE_DELAY_MS);
+
       }
     }
   }
-  //check UART for data
-  if(Serial.available()){
-    size_t len = Serial.available();
-    uint8_t sbuf[len];
-    Serial.readBytes(sbuf, len);
-    //push UART data to all connected telnet clients
-    for(i = 0; i < MAX_SRV_CLIENTS; i++){
-      if (serverClients[i] && serverClients[i].connected()){
-        serverClients[i].write(sbuf, len);
-        delay(1);
-      }
-    }
   }
 }
