@@ -11,6 +11,9 @@
 #include <string>
 #include <vector>
 #include "SOIL.h"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 // GL includes
 #include "shader.h"
@@ -21,11 +24,13 @@ using std::vector;
 using std::string;
 
 
+
+
 // GL includes
 #include "shader.h"
 #include "camera.h"
 #include "EGL/egl.h"
-#include "GLES/glplatform.h"
+//#include "GLES/glplatform.h"
 //#include "GLES/gl.h"
 #include "GLES2/gl2.h"
 
@@ -88,7 +93,6 @@ float vertices[] = {
 
 };
 
-
 GLushort  indexes[] = {0,1,2,3,4,5,6,7,8,9,10,11};
 
 
@@ -106,6 +110,7 @@ GLushort  indexes[] = {0,1,2,3,4,5,6,7,8,9,10,11};
 //      "#version 100\n"
 //       "   //texcoord = vec2(vtex.x, 1.0 - vtex.y);\n"
 //      "precision highp float;\n"
+
 
 
 const char *vs =
@@ -163,6 +168,7 @@ int mdl_index_count=-1;
 
 GLfloat angleX=0.0;
 GLfloat angleY=0.0;
+GLfloat angleZ=0.0;
 
 bool rotating=true;
 
@@ -232,6 +238,76 @@ void printHelp(int argc, char *argv[]) {
     printf("     -t   Texture to force load when loading a mdl file \n");
     printf("     -s   shaderfile will load and compile shaderfile.vert & shaderfile.frag\n");
     printf("     -h   This helptext\n");
+
+}
+
+
+// This connects to a ESP8266 with the sketch loaded in the sketch direcory
+// https://learn.adafruit.com/bno055-absolute-orientation-sensor-with-raspberry-pi-and-beaglebone-black/hardware?view=all
+void *connection_handler(void *dummy);
+
+
+char *sensor_adress;
+
+char buffer[1024];
+
+// This connects to the 
+void *connection_handler(void *dummy)
+{
+    int socket_desc  , c , *new_sock;
+    struct sockaddr_in server , client;
+    int ret;
+    int n;
+     
+    //Create socket
+    socket_desc = socket(AF_INET , SOCK_STREAM , 0);
+    if (socket_desc == -1)
+    {
+        printf("Could not create socket");
+    } else {
+        int enable = 1;
+        if (setsockopt(socket_desc, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+            printf("setsockopt(SO_REUSEADDR) failed");
+    }
+    puts("Socket created");
+     
+    //Prepare the sockaddr_in structure
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = inet_addr("192.168.1.118");
+    server.sin_port = htons( 10023 );
+
+    ret=-1;
+    while (ret<0)
+    {
+        ret = connect(socket_desc, (struct sockaddr*)&server, sizeof(struct sockaddr));
+
+        if(ret < 0){
+            //printf("connectnr %d: \n", ret);
+            fprintf(stderr, "Error: Can't connect to the server.\n");
+            //return 1;
+        }
+    }
+
+    rotating=false;
+    float x;
+    float y;
+    float z;
+
+
+
+
+   bzero(buffer,256);
+   n = read(socket_desc, buffer, 255);
+   while (n>=0) {
+       //printf("%s",buffer);
+       sscanf(buffer,"%f,%f,%f",&x,&y,&z);
+       angleX=M_PI*(x+90.0f)/180.0f;
+       angleY=M_PI*y/180.0f;
+       angleZ=2*M_PI*z/360.0f;
+       bzero(buffer,256);
+       n = read(socket_desc, buffer, 255);
+   }
+
 
 }
 
@@ -307,6 +383,15 @@ int main(int argc, char* argv[])
   }
 
   check();
+
+  // Start connection thread
+  pthread_t pconnection_thread;
+    
+  printf("creating socket thread\n");
+  //if( pthread_create( &pconnection_thread , NULL ,  connection_handler , (void*) NULL) < 0)
+  //{
+  //  printf("Failed to create connection thread\n");
+  //}
 
 
    // Setup some OpenGL options
@@ -462,8 +547,9 @@ int main(int argc, char* argv[])
           angleY+=0.004;
       }
 
-      model = glm::rotate(model, angleX, glm::vec3(1.0f, 0.0f, 0.1f));
-      model = glm::rotate(model, angleY, glm::vec3(0.0f, 1.0f, 0.1f));
+      model = glm::rotate(model, angleX, glm::vec3(1.0f, 0.0f, 0.0f));
+      model = glm::rotate(model, angleY, glm::vec3(0.0f, 1.0f, 0.0f));
+      model = glm::rotate(model, angleZ, glm::vec3(0.0f, 0.0f, 1.0f));
 
       
       glm::mat4 mvp=projection * view * model;

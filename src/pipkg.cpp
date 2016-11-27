@@ -142,9 +142,9 @@ void loadAvMdl(unsigned char* read_pos,unsigned int length,mdlGLData *GLdata)
   printf("text_hash1=%u\n",header->texture_hash1);
 
 
-  GLdata->textureIx=idFromHash(header->texture_hash);
+  GLdata->textureIx=idFromHash(header->texture_hash0);
   printf("textureIx=%u\n",GLdata->textureIx);
-  GLdata->textureIx=1;
+  //GLdata->textureIx=1;
 
   uint32_t buffer_size;
   buffer_size=*((uint32_t *)read_pos);
@@ -173,9 +173,9 @@ void loadAvMdl(unsigned char* read_pos,unsigned int length,mdlGLData *GLdata)
   GLdata->numIndexes=mdl_index_count;
 
 
-  //pos=ftell(file);
-  read_pos+=4;
+  // OLAS!!! HERE, before or after
   size_t pos_indexes=read_pos-data;
+  read_pos+=4;
   //////////////////
 
   // Rearrange data into buffers
