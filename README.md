@@ -2,6 +2,10 @@
 3D viewer for raspberry or other GLES/OpenGL linux using the Open Asset Import Library
 pi3d is an openGL/GLES viewer. The goal of this project is to make it possible to view 3d models on a raspberry.
 
+// This connects to a ESP8266 with the sketch loaded in the sketch direcory
+Now it also connects to a ESP8266 with a BNO055 sensor.
+https://learn.adafruit.com/bno055-absolute-orientation-sensor-with-raspberry-pi-and-beaglebone-black/hardware?view=all
+
 ## Build
 
 It uses assview and glm included as a submodules. Try
@@ -43,7 +47,7 @@ To build
     #To run
     pi3d ../test/tri_cube.blend
 
-To run the nice looking test shaders try,
+To run the nice looking test shaders (built with cmake) try,
 
     ./create    -s ../shader/creation  
     ./create  -t ../test/drkwood2.png  -s ../shader/tunnel 
@@ -54,8 +58,10 @@ These programs will need X-Windows to run
 On the raspberry, make will build pi3d ,triangle & triangle2.
 
 These programs uses EGL2 and does not need X-Windows to run.
-Try it with:
-./pi3d -t test/push_back_car.dds  test/Towcar.mdl
+Try it on raspberry  with:
+./pi3d -t test/a320_ein.pkg
+./triangle2
+
 
 ## PKG and MDL file format
 
@@ -73,4 +79,5 @@ To illustrate with an example:
     # To draw pkg file with accelerated opengl
     ../../pi3d tank.pkg
     # To draw using software-mesa version with assimp loading
-    ../../build/pi3d  vehicle-ifv-dmm08.obj
+    # You need to fix Cmakefile to build this
+    ../../build/gles3d  vehicle-ifv-dmm08.obj
