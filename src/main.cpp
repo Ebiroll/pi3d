@@ -13,6 +13,7 @@
 #include <netdb.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
+#include <glm/gtx/euler_angles.hpp>
 
 
 #include <stdio.h>
@@ -209,7 +210,7 @@ void *connection_handler(void *dummy)
    while (n>=0) {
        //printf("%s",buffer);
        sscanf(buffer,"%f,%f,%f",&x,&y,&z);
-       angleX=M_PI*(x+90.0f)/180.0f;
+       angleX=M_PI*(x)/180.0f;
        angleY=M_PI*y/180.0f;
        angleZ=2*M_PI*z/360.0f;
        bzero(buffer,256);
@@ -473,10 +474,12 @@ while (!glfwWindowShouldClose(window)) {
           //angleY+=0.04;
       }
 
+      model=model*glm::eulerAngleYXZ(1*angleX+offsetAngleX,angleZ,-1*(angleY+offsetAngleY));
 
-      model = glm::rotate(model, angleZ, glm::vec3(1.0f, 0.0f, 0.0f));
-      model = glm::rotate(model, -1*angleX+offsetAngleX, glm::vec3(0.0f, 1.0f, 0.0f));
-      model = glm::rotate(model, -angleY+offsetAngleY, glm::vec3(0.0f, 0.0f, 1.0f));
+
+      //model = glm::rotate(model, angleZ, glm::vec3(1.0f, 0.0f, 0.0f));
+      //model = glm::rotate(model, -1*angleX+offsetAngleX, glm::vec3(0.0f, 1.0f, 0.0f));
+      //model = glm::rotate(model, -angleY+offsetAngleY, glm::vec3(0.0f, 0.0f, 1.0f));
 
 
 /*
