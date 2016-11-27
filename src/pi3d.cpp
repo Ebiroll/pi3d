@@ -19,6 +19,7 @@
 #include "shader.h"
 //#include "camera.h"
 //#include "model.h"
+#include <glm/gtx/euler_angles.hpp>
 
 using std::vector;
 using std::string;
@@ -170,6 +171,10 @@ GLfloat angleX=0.0;
 GLfloat angleY=0.0;
 GLfloat angleZ=0.0;
 
+//could be used for adjustments
+GLfloat offsetAngleX=0.0;
+GLfloat offsetAngleY=0.0;
+
 bool rotating=true;
 
 
@@ -301,7 +306,7 @@ void *connection_handler(void *dummy)
    while (n>=0) {
        //printf("%s",buffer);
        sscanf(buffer,"%f,%f,%f",&x,&y,&z);
-       angleX=M_PI*(x+90.0f)/180.0f;
+       angleX=M_PI*(x)/180.0f;
        angleY=M_PI*y/180.0f;
        angleZ=2*M_PI*z/360.0f;
        bzero(buffer,256);
@@ -388,10 +393,10 @@ int main(int argc, char* argv[])
   pthread_t pconnection_thread;
     
   printf("creating socket thread\n");
-  //if( pthread_create( &pconnection_thread , NULL ,  connection_handler , (void*) NULL) < 0)
-  //{
-  //  printf("Failed to create connection thread\n");
-  //}
+  if( pthread_create( &pconnection_thread , NULL ,  connection_handler , (void*) NULL) < 0)
+  {
+    printf("Failed to create connection thread\n");
+  }
 
 
    // Setup some OpenGL options
@@ -510,7 +515,7 @@ int main(int argc, char* argv[])
 
     glm::mat4 view;
     glm::mat4 projection;
-    view = glm::translate(view, glm::vec3(0.0f, -2.0f, -8.0f));
+    view = glm::translate(view, glm::vec3(0.0f, -2.0f, -28.0f));
     projection = glm::perspective(45.0f, (GLfloat)state->screen_width/ (GLfloat) state->screen_height, 0.1f, 1000.0f);
 
     
@@ -541,16 +546,19 @@ int main(int argc, char* argv[])
       glm::mat4 model;
       //model = glm::translate(model, center);
 
-      //if (rotating)
+      if (rotating)
       {
           angleX+=0.0004;
           angleY+=0.004;
       }
 
-      model = glm::rotate(model, angleX, glm::vec3(1.0f, 0.0f, 0.0f));
-      model = glm::rotate(model, angleY, glm::vec3(0.0f, 1.0f, 0.0f));
-      model = glm::rotate(model, angleZ, glm::vec3(0.0f, 0.0f, 1.0f));
 
+      model=model*glm::eulerAngleYXZ(-1*(angleX+offsetAngleX),-angleZ,1*(angleY+offsetAngleY));
+
+      //model = glm::rotate(model, 1*angleZ, glm::vec3(1.0f, 0.0f, 0.0f));
+      //model = glm::rotate(model, -1*angleX, glm::vec3(0.0f, 1.0f, 0.0f));
+      //model = glm::rotate(model, 1*angleY, glm::vec3(0.0f, 0.0f, 1.0f));
+      
       
       glm::mat4 mvp=projection * view * model;
 

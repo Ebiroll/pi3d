@@ -174,8 +174,9 @@ void loadAvMdl(unsigned char* read_pos,unsigned int length,mdlGLData *GLdata)
 
 
   // OLAS!!! HERE, before or after
-  size_t pos_indexes=read_pos-data;
   read_pos+=4;
+  size_t pos_indexes=read_pos-data;
+  
   //////////////////
 
   // Rearrange data into buffers
