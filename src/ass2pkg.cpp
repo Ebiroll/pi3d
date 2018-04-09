@@ -570,6 +570,7 @@ int main (int argc, char *argv[], char **env_var_ptr)
     bool all=false;
 
     uint32_t hash=0;
+    bool force_texture=false;
 
     Hash_key simplek("SIMPLE");
     hash=simplek;
@@ -589,7 +590,9 @@ int main (int argc, char *argv[], char **env_var_ptr)
       if (!strcmp(argv[i],"-t"))
       {
           Hash_key key(argv[i+1]);
+          imgFiles.push_back(argv[i+1]);
           hash=key;
+          force_texture=true;
       }
 
       if (!strcmp(argv[i],"-d"))
@@ -707,9 +710,10 @@ int main (int argc, char *argv[], char **env_var_ptr)
                    filename = textureFilename(material,aiTextureType_DIFFUSE);
                 }
 
-                Hash_key key(filename.c_str());
-                hash=key;
-
+                if (force_texture==false) {
+                    Hash_key key(filename.c_str());
+                    hash=key;
+                }
 
                 writeToMdlFile(Buff,tmp.vrtx,tmp.indexes,skinned,hash);
                 mdlFiles.push_back(std::string(Buff));
