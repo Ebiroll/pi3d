@@ -14,7 +14,7 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <glm/gtx/euler_angles.hpp>
-
+#include <unistd.h>
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -182,7 +182,7 @@ void *connection_handler(void *dummy)
      
     //Prepare the sockaddr_in structure
     server.sin_family = AF_INET;
-    server.sin_addr.s_addr = inet_addr("192.168.1.118");
+    server.sin_addr.s_addr = inet_addr("192.168.1.133");
     server.sin_port = htons( 10023 );
 
     ret=-1;
@@ -251,6 +251,8 @@ int main(int argc, char* argv[])
   char geometry_shader[512];
 
 
+
+
   if (argc<2)
   {
       printHelp(argc,argv);
@@ -259,11 +261,13 @@ int main(int argc, char* argv[])
   // Start connection thread
   pthread_t pconnection_thread;
     
+#if 0
   printf("creating socket thread\n");
   if( pthread_create( &pconnection_thread , NULL ,  connection_handler , (void*) NULL) < 0)
   {
     printf("Failed to create connection thread\n");
   }
+#endif
 
 
   int ret=glfwInit();
@@ -311,12 +315,10 @@ int main(int argc, char* argv[])
        //TRACE("Failed to initiate glew");
    }
 
-
    // Set the required callback functions
    glfwSetKeyCallback(window, key_callback);
    glfwSetCursorPosCallback(window, mouse_callback);
    glfwSetScrollCallback(window, scroll_callback);
-
 
    // Define the viewport dimensions
    glViewport(0, 0, screenWidth, screenHeigth);

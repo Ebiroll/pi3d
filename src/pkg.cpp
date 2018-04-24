@@ -178,6 +178,98 @@ void loadSimpleMdl(uint8_t *data,uint32_t size,mdlGLData *GLdata)
 
 }
 
+// Custom format (general mdl file)
+void loadgeneralMdl(uint8_t *data,uint32_t size,mdlGLData *GLdata)
+{
+
+    General_t *test_header=(General_t *)data;
+
+    unsigned char*read_pos=(unsigned char*) data;
+    General_t *header=(General_t *)data;
+
+
+    //if (header.nlods!=1) {
+    //    printf("Only nlods ==1 supported\n");
+    //    exit(-1);
+    //}
+
+    printf("X  %.2f - %.2f\n",header->_abb[0].x,header->_abb[1].x);
+    printf("Y  %.2f - %.2f\n",header->_abb[0].y,header->_abb[1].y);
+    printf("Z  %.2f - %.2f\n",header->_abb[0].z,header->_abb[1].z);
+
+    glm::vec3 tmp(0.0f-(header->_abb[0].x+header->_abb[1].x)/2,
+                  0.0f-(header->_abb[0].y+header->_abb[1].y)/2,
+                  0.0f-(header->_abb[0].z+header->_abb[1].z)/2);
+
+
+    read_pos+=sizeof(General_t);
+
+    printf("name=%s\n",header->name);
+
+    GLdata->textureIx=idFromHash(header->texture_hash0);
+    printf("rend_hash=%d\n",header->render_hash);
+    printf("text_hash0=%u,id=%u\n",header->texture_hash0,GLdata->textureIx);
+    printf("text_hash1=%u,id=%u\n",header->texture_hash1,GLdata->textureIx);
+    printf("text_hash2=%u,id=%u\n",header->texture_hash2,GLdata->textureIx);
+
+
+
+    uint32_t buffer_size;
+    buffer_size=*(uint32_t *)read_pos;
+    read_pos+=4;
+
+    // Part of header
+    //uint32_t texture_hash = 0;
+    //fread(&texture_hash, 4,1,file);
+    //std::shared_ptr<Texture> sp_texture = engine::texture_manager->fetch_texture(texture_hash);
+    //re_simple->texture = sp_texture->texture_id();
+
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+    GLdata->indexVAO=VAO;
+
+    printf("buff_size,buffer size/sizeof(pixel_data) %d\n",buffer_size,buffer_size/sizeof(Vertex_t));
+
+    //int pos=ftell(file);
+
+    GLuint vb;
+    glGenBuffers(1, &vb);
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+    glBufferData(GL_ARRAY_BUFFER, buffer_size, read_pos, GL_STATIC_DRAW);
+
+    //fseek(file,pos + buffer_size,SEEK_SET);
+    //fread(&buffer_size, 4,1,file);
+
+    read_pos +=  buffer_size;
+    buffer_size=*(uint32_t *)read_pos;
+    read_pos+=4;
+
+    //for (int i = 0; i < 16; i ++) {
+    //        printf(" %2x", read_pos[i]);
+    //}
+
+    GLdata->numIndexes=buffer_size/2;
+    printf("index count %d\n",GLdata->numIndexes);
+
+    //pos=ftell(file);
+
+    GLuint ib;
+    glGenBuffers(1, &ib);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer_size,  read_pos, GL_STATIC_DRAW);
+
+    //fseek(file,pos + buffer_size,SEEK_SET);
+
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (char*)0 + 12);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (char*)0 + 24);
+
+    glBindVertexArray(0);
+
+}
 
 
 // Custom format (mdl file)
@@ -281,6 +373,16 @@ int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem)
    PKG_content *my_content;
    int ret=0;
 
+#if 0
+    Hash_key key("STATIC_DECAL");
+    uint32_t test=key;
+
+    printf("STATIC_DECAL %u\n",test);
+
+    exit (0);
+#endif
+
+
    FILE *file = fopen(filename, "rb");
 
    if (file==NULL)
@@ -339,20 +441,29 @@ int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem)
                     GLdata++;
                     ret++;
                   break;
+                case GENERAL_HASH:
+                    printf("GENERAL_HASH\n");
+                    loadgeneralMdl(&data[my_content->files[ix].offset],my_content->files[ix].size,GLdata);
+                    break;
+
                   case AV_MODEL_HASH:
                     printf("AV_MODEL_HASH\n");
                     loadAvMdl(&data[my_content->files[ix].offset],my_content->files[ix].size,GLdata);
                     GLdata++;
                     ret++;
                   break;
+                  case TREE_HASH:
+                    printf("TREE_HASH\n");
+                    break;
+    
                   case AV_CS_HASH:
-                   printf("AV_CS_HASH\n");
-                 break;
+                     printf("AV_CS_HASH\n");
+                   break;
                  case STATIC_DECAL_HASH:
                    printf("STATIC_DECAL_HASH\n");
                  break;
                   default:
-                    printf("UNKNOWN_HASH\n");
+                    printf("UNKNOWN_HASH %u\n",test->render_hash);
                   break;
 
               }

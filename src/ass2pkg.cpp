@@ -144,7 +144,8 @@ void writeToMdlFile(char *filename , std::vector<Vertex_t> data,std::vector<unsi
      }
 
      strcpy(header.name,"Test");
-     Hash_key key("BUILDING");
+     
+     Hash_key key("GENERAL");
      header.render_hash=key;
 
      header.texture_hash=hash;
