@@ -1,0 +1,164 @@
+cmake_minimum_required(VERSION 2.4)
+PROJECT(pi3d)
+SET (CMAKE_BUILD_TYPE Release)
+#SET (CMAKE_BUILD_TYPE RelWithDebInfo)
+#SET (CMAKE_BUILD_TYPE Debug)
+
+# Test if we are running on raspberry-pi -D BCMHOST
+include(CheckIncludeFile)
+CHECK_INCLUDE_FILE(/opt/vc/include/bcm_host.h BCMHOST)
+
+# For emscripten, fix CMAKE_CXX_FLAGS, then try
+# cmake -DCMAKE_TOOLCHAIN_FILE=/usr/lib/emscripten/cmake/Modules/Platform/Emscripten.cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -G  "Unix Makefiles" ..
+
+#Options for emscripten
+# USE_PTHREADS=1  -s -Os -s -Os
+set(CMAKE_CXX_FLAGS "-s USE_GLFW=3  -s WASM=1 -s ASSERTIONS=1 -s DISABLE_EXCEPTION_CATCHING=0 --bind")
+set(CMAKE_CXX_LINK_FLAGS "-s USE_GLFW=3 -s FULL_ES2=1 -s WASM=1 -s ASSERTIONS=1 -s DISABLE_EXCEPTION_CATCHING=0 --embed-file a320_ein.pkg")
+#add_definitions(-DHAVEGLES)
+
+
+# Cmake 3.0 and above
+#find_package(GLEW REQUIRED)
+#if (GLEW_FOUND)
+#    include_directories(${GLEW_INCLUDE_DIRS})
+#    link_libraries(${GLEW_LIBRARIES})
+#endif()
+
+#find_path(GLEW_INCLUDE_DIR GL/glew.h)
+#find_library(GLEW_LIBRARY NAMES GLEW glew32 glew glew32s PATH_SUFFIXES lib64)
+
+#SET (LIBRARY_TYPE STATIC)
+
+IF(WIN32)
+ELSE(WIN32)
+set(CMAKE_CXX_FLAGS "-std=c++11")
+#LINK_FLAGS
+#  -pthread 
+set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined -pthread -lm")
+ENDIF(WIN32)
+
+
+INCLUDE_DIRECTORIES(
+  glew/include
+  glfw/include
+  assimp/include
+  glm
+  soil
+  /home/olas/work/si_vis/glfw/include
+  /home/olas/work/si_vis/glew/include
+)
+
+
+INCLUDE_DIRECTORIES(
+src
+)
+
+SET(SOIL_SRC
+soil/image_DXT.c
+soil/SOIL.h
+soil/image_DXT.h
+soil/stbi_DDS_aug_c.h
+soil/image_helper.c
+soil/stbi_DDS_aug.h
+soil/image_helper.h
+soil/stb_image_aug.c
+soil/SOIL.c
+soil/stb_image_aug.h
+)
+
+ADD_EXECUTABLE(pi3d
+${SOIL_SRC}
+src/hash.cpp
+src/Mesh.cpp
+src/emscripten_main.cpp
+#src/main.cpp
+src/pipkg.cpp
+src/Mesh.h
+src/shader.frag
+src/shader.vert
+src/normal.frag
+src/normal.vert
+src/normal.geom
+src/shader.h
+src/shader.cpp
+)
+
+
+# Test GLES
+#add_definitions(-DHAVEGLES -DHAVEGLES)
+
+
+#Emscripten enabled viewer
+#ADD_EXECUTABLE(glem3d
+#${SOIL_SRC}
+#src/hash.cpp
+#src/em3d.cpp
+#src/emscipten_main.cpp
+#src/eglstate.h
+#src/camera.h
+#src/shader.frag
+#src/shader.vert
+#src/normal.frag
+#src/normal.vert
+#src/normal.geom
+#src/shader.h
+#src/shader.cpp
+#${SOIL_SRC}
+#)
+
+
+ADD_EXECUTABLE(create
+${SOIL_SRC}
+src/hash.cpp
+src/Mesh.cpp
+src/create.cpp
+src/pkg.cpp
+src/Mesh.h
+src/shader.frag
+src/shader.vert
+src/normal.frag
+src/normal.vert
+src/normal.geom
+src/shader.h
+src/shader.cpp
+)
+
+ADD_EXECUTABLE(ass2pkg
+src/hash.cpp
+src/ass2pkg.cpp
+)
+
+OPTION(ASSIMP_BUILD_TESTS "assimp tests" OFF)
+
+add_subdirectory(assimp)
+#add_subdirectory(glfw)
+#add_subdirectory(glew)
+
+
+
+IF(WIN32)
+TARGET_LINK_LIBRARIES(pi3d opengl32 glfw X11 Xext) 
+ELSE(WIN32)
+#TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw GLEW X11 Xext)
+#TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw /home/olof/work/pi3d/glew/lib/libGLEW.a  X11 Xext) 
+#TARGET_LINK_LIBRARIES(create assimp m GL glfw /home/olof/work/pi3d/glew/lib/libGLEW.a  X11 Xext)
+#TARGET_LINK_LIBRARIES(create assimp m GL glfw GLEW  X11 Xext)
+#TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw GLEW  X11 Xext Xinerama Xi Xcursor dl Xrandr GL) 
+# emscripten,  
+TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw GLEW   GL) 
+TARGET_LINK_LIBRARIES(create assimp m GL glfw GLEW  X11 Xext Xinerama Xi Xcursor dl Xrandr GL)
+TARGET_LINK_LIBRARIES(ass2pkg assimp)
+
+#TARGET_LINK_LIBRARIES(gles3d  m GL   GLEWGLESv2 EGL)
+
+#TARGET_LINK_LIBRARIES(glem3d  m GL glfw GLEW)
+
+
+ENDIF(WIN32)
+
+
+
+
+
+
