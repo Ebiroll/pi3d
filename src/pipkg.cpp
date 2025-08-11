@@ -46,6 +46,13 @@ typedef struct {
     uint32_t  hash;
 } TextureHashMap;
 
+struct PkgEntry
+{
+    char file[32];
+    uint32_t size;
+    uint32_t offset;
+} ;
+
 std::vector<TextureHashMap>  loadedImages;
 
 GLuint idFromHash(uint32_t  hash) {
@@ -100,12 +107,6 @@ GLint TextureFromData(const unsigned char* data,unsigned int length)
     return textureID;
 }
 
-struct SlumEntry
-{
-    char file[32];
-    uint32_t size;
-    uint32_t offset;
-} ;
 
 
 struct IndexVertex
@@ -426,13 +427,70 @@ void loadSimpleMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
 
 
 }
+// Custom format (general mdl file) — NO VAO VERSION
+void loadgeneralMdl(uint8_t* data, uint32_t size, mdlGLData* GLdata)
+{
+    General_t* header = reinterpret_cast<General_t*>(data);
+    const unsigned char* read_pos = reinterpret_cast<unsigned char*>(data) + sizeof(General_t);
+
+    printf("X  %.2f - %.2f\n", header->_abb[0].x, header->_abb[1].x);
+    printf("Y  %.2f - %.2f\n", header->_abb[0].y, header->_abb[1].y);
+    printf("Z  %.2f - %.2f\n", header->_abb[0].z, header->_abb[1].z);
+    printf("name=%s\n", header->name);
+
+    GLdata->textureIx = idFromHash(header->texture_hash0);
+    printf("rend_hash=%d\n", header->render_hash);
+    printf("text_hash0=%u,id=%u\n", header->texture_hash0, GLdata->textureIx);
+    printf("text_hash1=%u,id=%u\n", header->texture_hash1, GLdata->textureIx);
+    printf("text_hash2=%u,id=%u\n", header->texture_hash2, GLdata->textureIx);
+
+    // ---- Vertex buffer (interleaved Vertex) ----
+    uint32_t vertex_buffer_size = *reinterpret_cast<const uint32_t*>(read_pos);
+    read_pos += 4;
+
+    printf("buffer size = %u, vertices = %u\n",
+           vertex_buffer_size, (unsigned)(vertex_buffer_size / sizeof(Vertex)));
+
+    glGenBuffers(1, &GLdata->dataVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, GLdata->dataVBO);
+    glBufferData(GL_ARRAY_BUFFER,
+                 (GLsizeiptr)vertex_buffer_size,
+                 read_pos, GL_STATIC_DRAW);
+
+    read_pos += vertex_buffer_size;
+
+    // ---- Index buffer (GL_UNSIGNED_SHORT) ----
+    uint32_t index_buffer_size = *reinterpret_cast<const uint32_t*>(read_pos);
+    read_pos += 4;
+
+    GLdata->numIndexes = index_buffer_size / sizeof(GLushort);
+    printf("index count %u\n", (unsigned)GLdata->numIndexes);
+
+    glGenBuffers(1, &GLdata->indexVAO);              // NOTE: this is an EBO, name kept for compatibility
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLdata->indexVAO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 (GLsizeiptr)index_buffer_size,
+                 read_pos, GL_STATIC_DRAW);
+
+    // No VAO state captured here. Attribute setup happens before draw.
+}
 
 
-// Loads pkg file, returns number of loaded elements
+// Loads pkg file
 int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem)
 {
    PKG_content *my_content;
    int ret=0;
+
+#if 0
+    Hash_key key("STATIC_DECAL");
+    uint32_t test=key;
+
+    printf("STATIC_DECAL %u\n",test);
+
+    exit (0);
+#endif
+
 
    FILE *file = fopen(filename, "rb");
 
@@ -456,61 +514,26 @@ int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem)
 
 
 
-   printf("siz=%d\n",4+ my_content->n_files* sizeof(SlumEntry));
-   // Load all textures first...
+   printf("siz=%d\n",4+ my_content->n_files* sizeof(PkgEntry));
+
    int numF=my_content->n_files;
    for (int ix=0;ix<numF;ix++)
    {
-       char *pExt = strrchr(my_content->files[ix].file, '.');
-       if (pExt != NULL)
-       {
-
-           if (strcmp(pExt,".dds")==0)
-           {
-               GLuint id=TextureFromData(&data[my_content->files[ix].offset],my_content->files[ix].size);
-               TextureHashMap tmp;
-
-               Hash_key namehash(my_content->files[ix].file);
-               tmp.hash=namehash;
-               tmp.textureID=id;
-
-               printf("Stored image %s hash %u as %d\n",my_content->files[ix].file,tmp.hash,tmp.textureID);
-
-               loadedImages.push_back(tmp);
-
-
-           }
-           if (strcmp(pExt,".png")==0)
-           {
-               GLuint id=TextureFromData(&data[my_content->files[ix].offset],my_content->files[ix].size);
-               TextureHashMap tmp;
-
-               Hash_key namehash(my_content->files[ix].file);
-               tmp.hash=namehash;
-               tmp.textureID=id;
-
-               printf("Stored image %s hash %u as %d\n",my_content->files[ix].file,tmp.hash,tmp.textureID);
-
-               loadedImages.push_back(tmp);
-
-
-           }
-
-      }
-
-   }
-
-   for (int ix=0;ix<numF;ix++)
-   {
-       //printf("%s\n",my_content->files[ix].file);
-       //printf("off=%d\n",my_content->files[ix].offset);
-       //printf("siz=%d\n",my_content->files[ix].size);
-       //printf("nxt=%d\n",my_content->files[ix].offset + my_content->files[ix].size);
+       printf("%s\n",my_content->files[ix].file);
+       printf("off=%d\n",my_content->files[ix].offset);
+       printf("siz=%d\n",my_content->files[ix].size);
+       printf("nxt=%d\n",my_content->files[ix].offset + my_content->files[ix].size);
 
        char *pExt = strrchr(my_content->files[ix].file, '.');
-       if (pExt != NULL)
+       if (true /*pExt != NULL*/)
        {
-          if (strcmp(pExt,".mdl")==0)
+           if (pExt==NULL) {
+               pExt=".tst";
+           }
+           if (ret>40) {
+               return ret;
+           }
+          if ((strcmp(pExt,".mdl")==0) || (strcmp(my_content->files[ix].file,"DH8D")==0))
           {
               mdl_lod1Header_t *test=(mdl_lod1Header_t *)&data[my_content->files[ix].offset];
               switch(test->render_hash)
@@ -527,23 +550,67 @@ int loadPkg(char *filename,Camera &camera,mdlGLData *GLdata,int numElem)
                     GLdata++;
                     ret++;
                   break;
+                case GENERAL_HASH:
+                    printf("GENERAL_HASH\n");
+                    loadgeneralMdl(&data[my_content->files[ix].offset],my_content->files[ix].size,GLdata);
+                    break;
+
                   case AV_MODEL_HASH:
                     printf("AV_MODEL_HASH\n");
                     loadAvMdl(&data[my_content->files[ix].offset],my_content->files[ix].size,GLdata);
                     GLdata++;
                     ret++;
                   break;
+                  case TREE_HASH:
+                    printf("TREE_HASH\n");
+                    break;
+    
                   case AV_CS_HASH:
-                   printf("AV_CS_HASH\n");
-                 break;
+                     printf("AV_CS_HASH\n");
+                   break;
                  case STATIC_DECAL_HASH:
                    printf("STATIC_DECAL_HASH\n");
                  break;
+                  default:
+                    printf("UNKNOWN_HASH %u\n",test->render_hash);
+                  break;
 
               }
+
           }
+          if (strcmp(pExt,".dds")==0)
+          {              
+              GLuint id=TextureFromData(&data[my_content->files[ix].offset],my_content->files[ix].size);
+              TextureHashMap tmp;
+
+              Hash_key namehash(my_content->files[ix].file);
+              tmp.hash=namehash;
+              tmp.textureID=id;
+
+              printf("Stored image %s hash %u as %d\n",my_content->files[ix].file,tmp.hash,tmp.textureID);
+
+              loadedImages.push_back(tmp);
+
+          }
+          if (strcmp(pExt,".png")==0)
+          {
+              GLuint id=TextureFromData(&data[my_content->files[ix].offset],my_content->files[ix].size);
+              TextureHashMap tmp;
+
+              Hash_key namehash(my_content->files[ix].file);
+              tmp.hash=namehash;
+              tmp.textureID=id;
+
+              printf("Stored image %s hash %u as %d\n",my_content->files[ix].file,tmp.hash,tmp.textureID);
+
+              loadedImages.push_back(tmp);
+
+          }
+
+
       }
    }
+   printf("LOADED!!\n\n");
 
    return ret;
 }

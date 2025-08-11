@@ -27,6 +27,8 @@
 
 #include "shader.h"
 #include "camera.h"
+#include <emscripten/html5.h>
+
 // Nice tutorials
 // http://duriansoftware.com/joe/An-intro-to-modern-OpenGL.-Chapter-2.2:-Shaders.html
 //
@@ -83,8 +85,8 @@ glBindAttribLocation (ProgramID, 0, "vertexPosition_modelspace");
 
 */
 #endif
-//#define GLSL(src) "#version 100\n" #src
-#define GLSL(src)  #src
+#define GLSL(src) "#version 100\n" #src
+//#define GLSL(src)  #src
 
 const char* vs = GLSL(
         attribute vec3 position;
@@ -105,6 +107,20 @@ const char* vs = GLSL(
             texcoord = vec2(vtex.x, 1.0 - vtex.y);
         });
 
+
+//const char* fs = R"(
+//precision mediump float;
+//varying vec2 texcoord;
+//uniform sampler2D tex;
+//uniform vec4 colour;
+//void main() {
+//  vec2 coord = clamp(texcoord, 0.0, 1.0);
+  //gl_FragColor = texture2D(tex, coord) * colour;
+//  gl_FragColor = vec4(0.0,1.0,0.0,1.0);
+//}
+//)";
+
+        #if 1
 const char* fs = GLSL(
             precision highp float;
             varying vec2 texcoord;
@@ -118,12 +134,26 @@ const char* fs = GLSL(
              coord.x=clamp(texcoord.x,0.0,1.0);
              coord.y=clamp(texcoord.y,0.0,1.0);
              //gl_FragColor = texture2D(tex, coord);
+                // TODO! we want colour 
                 //gl_FragColor = texture2D(tex, texcoord);
                 //gl_FragColor = vec4(0.0,1.0,0.0,1.0);
                 gl_FragColor = vec4(0.0,0.0,coord.y,1.0) ;
                 //gl_FragColor = texture2D(tex, coord) ;
             });
+            #endif
 
+            /*
+            const char* fs = GLSL(
+            varying vec2 texcoord;
+            uniform sampler2D tex;
+
+            void main()
+            {
+                gl_FragColor = texture2D(tex, texcoord);
+                //gl_FragColor = vec4(0.0,1.0,0.0,1.0);
+                //gl_FragColor = vec4(texcoord.x,texcoord.y,0.0,1.0);
+            });
+            */
 #if 0
 const char* vs = GLSL(
     attribute vec4 position;                     
@@ -187,6 +217,14 @@ char *sensor_adress;
 
 char buffer[1024];
 
+
+static void enable_webgl_extensions() {
+  EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_get_current_context();
+  emscripten_webgl_enable_extension(ctx, "WEBGL_compressed_texture_s3tc");
+  emscripten_webgl_enable_extension(ctx, "WEBKIT_WEBGL_compressed_texture_s3tc");
+  emscripten_webgl_enable_extension(ctx, "MOZ_WEBGL_compressed_texture_s3tc");
+  emscripten_webgl_enable_extension(ctx, "WEBGL_compressed_texture_s3tc_srgb");
+}
 #if 0
 GLint TextureFromFile(const char* path, std::string directory, bool gamma)
 {
@@ -241,6 +279,7 @@ int gMaxMdl=0;
 GLFWwindow* window;
 Shader *shader;
 
+
 void do_frame(){
     // Set frame time
       GLfloat currentFrame = glfwGetTime();
@@ -277,6 +316,13 @@ void do_frame(){
       GLint projLoc = glGetUniformLocation(shader->Program, "projection");
       GLint mvpLoc = glGetUniformLocation(shader->Program, "mvp");
 
+      GLint maxAttr = 0; glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxAttr);
+        auto enable_attr = [&](GLint loc, GLint size, GLenum type, GLsizei stride, const void* off, GLuint vbo){
+            if (loc < 0 || loc >= maxAttr) return;           // <-- critical guard
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glEnableVertexAttribArray((GLuint)loc);
+            glVertexAttribPointer((GLuint)loc, size, type, GL_FALSE, stride, off);
+        };
 
 
       glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
@@ -315,6 +361,8 @@ void do_frame(){
 
       GLuint attr_position = glGetAttribLocation(shader->Program, "position");
       GLuint attr_vtex = glGetAttribLocation(shader->Program, "vtex");
+      GLint my_maxAttr; glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &my_maxAttr);
+     //printf("attr_position=%d attr_vtex=%d max=%d\n", attr_position, attr_vtex, my_maxAttr);
 
 
       glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -326,12 +374,29 @@ void do_frame(){
       //printf("max mdl %d\n",gMaxMdl);
       if (gMaxMdl>0)
       {
+        //printf("-");
 
           for (int q=0;q<gMaxMdl;q++)
           {
               //printf("%d\n",q);
+              enable_attr(attr_position, 3, GL_FLOAT, 0, (void*)0, staticData[q].dataVBO);
+              enable_attr(attr_vtex,  2, GL_FLOAT, 0, (void*)0, staticData[q].uvVBO);
+
+                // bind & set only if valid
+                if (attr_position >= 0) {
+                glBindBuffer(GL_ARRAY_BUFFER, staticData[q].dataVBO);
+                glEnableVertexAttribArray(attr_position);
+                glVertexAttribPointer(attr_position, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+                }
+                if (attr_vtex >= 0) {
+                glBindBuffer(GL_ARRAY_BUFFER, staticData[q].uvVBO);
+                glEnableVertexAttribArray(attr_vtex);
+                glVertexAttribPointer(attr_vtex, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+                }
+
+
 #if 1
-            glEnableVertexAttribArray(attr_position);
+            //glEnableVertexAttribArray(attr_position);
             //printf("%d\n",staticData[q].dataVBO);
             glBindBuffer(GL_ARRAY_BUFFER, staticData[q].dataVBO);
             
@@ -369,10 +434,27 @@ void do_frame(){
           0, // stride
           (void*)0 // array buffer offset
           );
+
 #endif
 
-              glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,staticData[q].indexVAO);
-              glBindVertexArray(staticData[q].indexVAO);
+              //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,staticData[q].indexVAO);
+              //glBindVertexArray(staticData[q].indexVAO);
+
+              glBindBuffer(GL_ARRAY_BUFFER, staticData[q].dataVBO);
+              glEnableVertexAttribArray(attr_position);
+              glVertexAttribPointer(attr_position, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+              glActiveTexture(GL_TEXTURE0);
+              glBindTexture(GL_TEXTURE_2D, staticData[q].textureIx);   // see #3
+              glUniform1i(glGetUniformLocation(shader->Program, "tex"), 0);
+
+              glEnableVertexAttribArray(attr_vtex);
+              glBindBuffer(GL_ARRAY_BUFFER, staticData[q].uvVBO);
+              glVertexAttribPointer(attr_vtex, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+              glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, staticData[q].indexVAO);
+              glDrawElements(GL_TRIANGLES, staticData[q].numIndexes, GL_UNSIGNED_SHORT, 0);
+
               glDrawElements(GL_TRIANGLES, staticData[q].numIndexes, GL_UNSIGNED_SHORT, 0);
               //glDrawArraysInstanced(GL_TRIANGLES, 0, staticData[q].numIndexes*2, staticData[q].numIndexes);
 
@@ -466,6 +548,8 @@ int main(int argc, char* argv[])
    glfwMakeContextCurrent(window);
 
 
+  
+#if 0
    printf("GLEW init %d,%d\n",screenWidth, screenHeigth);
 
 
@@ -475,6 +559,7 @@ int main(int argc, char* argv[])
        exit(0);
        //TRACE("Failed to initiate glew");
    }
+#endif
 
    // Set the required callback functions
    glfwSetKeyCallback(window, key_callback);
@@ -492,6 +577,7 @@ int main(int argc, char* argv[])
 
     // Not 
    //glEnable(GL_TEXTURE_2D);
+    enable_webgl_extensions();
 
 
    for (int i=1; i< argc; i++) {
@@ -546,7 +632,7 @@ int main(int argc, char* argv[])
 
    printf("Loading ----------  pkg\n");
 
-   gMaxMdl=loadPkg("a320_ein.pkg",camera,&staticData[0],MAX_MDLS);
+   gMaxMdl=loadPkg("data/a320_ein.pkg",camera,&staticData[0],MAX_MDLS);
 
    printf("Loaded ---------- %d pkg\n",gMaxMdl);
 

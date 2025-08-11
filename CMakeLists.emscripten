@@ -8,15 +8,29 @@ SET (CMAKE_BUILD_TYPE Release)
 include(CheckIncludeFile)
 CHECK_INCLUDE_FILE(/opt/vc/include/bcm_host.h BCMHOST)
 
+
+#set(CMAKE_EXECUTABLE_SUFFIX ".html")
+
 # For emscripten, fix CMAKE_CXX_FLAGS, then try
 # cmake -DCMAKE_TOOLCHAIN_FILE=/usr/lib/emscripten/cmake/Modules/Platform/Emscripten.cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -G  "Unix Makefiles" ..
+# emcmake cmake -S . -B build-wasm \
+#  -DCMAKE_BUILD_TYPE=Release \
+#  -DASSIMP_BUILD_TESTS=OFF
+
+# 
 
 #Options for emscripten
 # USE_PTHREADS=1  -s -Os -s -Os
-set(CMAKE_CXX_FLAGS "-s USE_GLFW=3  -s WASM=1 -s ASSERTIONS=1 -s DISABLE_EXCEPTION_CATCHING=0 --bind")
-set(CMAKE_CXX_LINK_FLAGS "-s USE_GLFW=3 -s FULL_ES2=1 -s WASM=1 -s ASSERTIONS=1 -s DISABLE_EXCEPTION_CATCHING=0 --embed-file a320_ein.pkg")
+#set(CMAKE_CXX_FLAGS "-s USE_GLFW=3  -s WASM=1 -s ASSERTIONS=1 -s DISABLE_EXCEPTION_CATCHING=0 --bind")
+#set(CMAKE_CXX_LINK_FLAGS "-s USE_GLFW=3 -s FULL_ES2=1 -s WASM=1 -s ASSERTIONS=1 -s DISABLE_EXCEPTION_CATCHING=0 --embed-file a320_ein.pkg")
 #add_definitions(-DHAVEGLES)
 
+
+
+
+  # 5) Don’t build Assimp’s tools in WASM (they were creating assimp.js)
+  set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+  set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 
 # Cmake 3.0 and above
 #find_package(GLEW REQUIRED)
@@ -43,6 +57,7 @@ INCLUDE_DIRECTORIES(
   glew/include
   glfw/include
   assimp/include
+  ${CMAKE_BINARY_DIR}/assimp/include
   glm
   soil
   /home/olas/work/si_vis/glfw/include
@@ -147,8 +162,39 @@ ELSE(WIN32)
 #TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw GLEW  X11 Xext Xinerama Xi Xcursor dl Xrandr GL) 
 # emscripten,  
 TARGET_LINK_LIBRARIES(pi3d assimp m GL glfw GLEW   GL) 
-TARGET_LINK_LIBRARIES(create assimp m GL glfw GLEW  X11 Xext Xinerama Xi Xcursor dl Xrandr GL)
+TARGET_LINK_LIBRARIES(create assimp m GL glfw GLEW  GL)
 TARGET_LINK_LIBRARIES(ass2pkg assimp)
+
+
+  # 3) Preload your asset for THIS target only (adjust path!)
+  # If the pkg lives at <repo>/test/a320_ein.pkg:
+  set(PKG_PATH "${CMAKE_SOURCE_DIR}/test/a320_ein.pkg")
+  target_link_options(pi3d PRIVATE
+    "--preload-file" "${PKG_PATH}@/data/a320_ein.pkg"
+  )
+
+  # 4) Define EMSCRIPTEN for any #ifdefs
+  target_compile_definitions(pi3d PRIVATE EMSCRIPTEN)
+
+target_link_options(pi3d PRIVATE
+    -sUSE_GLFW=3
+    -sFULL_ES2=1
+    -sWASM=1
+    -sASSERTIONS=1
+    -sDISABLE_EXCEPTION_CATCHING=0
+  )
+
+target_link_options(create PRIVATE
+    -sUSE_GLFW=3
+    -sFULL_ES2=1
+    -sWASM=1
+    -sASSERTIONS=1
+    -sDISABLE_EXCEPTION_CATCHING=0
+  )
+
+
+
+#target_link_libraries(pi3d PRIVATE)
 
 #TARGET_LINK_LIBRARIES(gles3d  m GL   GLEWGLESv2 EGL)
 
