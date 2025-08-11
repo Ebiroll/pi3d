@@ -60,7 +60,11 @@ GLint TextureFromData(const unsigned char* data,unsigned int length)
     }
     // Assign texture to ID
     glBindTexture(GL_TEXTURE_2D, textureID);
+    #if defined(__EMSCRIPTEN__)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB , width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    #else
     glTexImage2D(GL_TEXTURE_2D, 0, gamma ? GL_SRGB : GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    #endif
     glGenerateMipmap(GL_TEXTURE_2D);
 
     // Parameters

@@ -427,52 +427,71 @@ void loadSimpleMdl(unsigned char*read_pos,unsigned int length,mdlGLData *GLdata)
 
 
 }
-// Custom format (general mdl file) — NO VAO VERSION
+// Vertex layout you gave:
+// General MDL loader (no VAO; creates pos VBO, uv VBO, and EBO)
 void loadgeneralMdl(uint8_t* data, uint32_t size, mdlGLData* GLdata)
 {
-    General_t* header = reinterpret_cast<General_t*>(data);
-    const unsigned char* read_pos = reinterpret_cast<unsigned char*>(data) + sizeof(General_t);
+    General_t* header = (General_t*)data;
+    unsigned char* p  = (unsigned char*)data + sizeof(General_t);
 
     printf("X  %.2f - %.2f\n", header->_abb[0].x, header->_abb[1].x);
     printf("Y  %.2f - %.2f\n", header->_abb[0].y, header->_abb[1].y);
     printf("Z  %.2f - %.2f\n", header->_abb[0].z, header->_abb[1].z);
     printf("name=%s\n", header->name);
 
-    GLdata->textureIx = idFromHash(header->texture_hash0);
-    printf("rend_hash=%d\n", header->render_hash);
-    printf("text_hash0=%u,id=%u\n", header->texture_hash0, GLdata->textureIx);
-    printf("text_hash1=%u,id=%u\n", header->texture_hash1, GLdata->textureIx);
-    printf("text_hash2=%u,id=%u\n", header->texture_hash2, GLdata->textureIx);
+    int tex = idFromHash(header->texture_hash0);
+    if (tex > 0) GLdata->textureIx = tex;
 
-    // ---- Vertex buffer (interleaved Vertex) ----
-    uint32_t vertex_buffer_size = *reinterpret_cast<const uint32_t*>(read_pos);
-    read_pos += 4;
+    // --- vertex block ---
+    if (p + 4 > (unsigned char*)data + size) return;
+    uint32_t vbuf_sz = *(uint32_t*)p; p += 4;
+    if (p + vbuf_sz > (unsigned char*)data + size) return;
 
-    printf("buffer size = %u, vertices = %u\n",
-           vertex_buffer_size, (unsigned)(vertex_buffer_size / sizeof(Vertex)));
+    if (vbuf_sz % sizeof(Vertex_t) != 0) {
+        printf("WARN: vertex buffer size %u not multiple of Vertex_t(%zu)\n",
+               vbuf_sz, sizeof(Vertex_t));
+    }
+    size_t numVerts = vbuf_sz / sizeof(Vertex_t);
+    Vertex_t* verts = (Vertex_t*)p;
+    p += vbuf_sz;
 
+    // --- index block ---
+    if (p + 4 > (unsigned char*)data + size) return;
+    uint32_t ibuf_sz = *(uint32_t*)p; p += 4;
+    if (p + ibuf_sz > (unsigned char*)data + size) return;
+
+    GLdata->numIndexes = (GLsizei)(ibuf_sz / sizeof(GLushort));
+    GLushort* indices  = (GLushort*)p;
+
+    // --- split interleaved -> separate pos + uv arrays ---
+    std::vector<float> pos(3 * numVerts);
+    std::vector<float> uv (2 * numVerts);
+
+    for (size_t i = 0; i < numVerts; ++i) {
+        pos[3*i+0] = verts[i].pos[0];
+        pos[3*i+1] = verts[i].pos[1];
+        pos[3*i+2] = verts[i].pos[2];
+
+        uv [2*i+0] = verts[i].tex[0];
+        uv [2*i+1] = verts[i].tex[1];
+    }
+
+    // --- upload ---
     glGenBuffers(1, &GLdata->dataVBO);
     glBindBuffer(GL_ARRAY_BUFFER, GLdata->dataVBO);
-    glBufferData(GL_ARRAY_BUFFER,
-                 (GLsizeiptr)vertex_buffer_size,
-                 read_pos, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, pos.size()*sizeof(float), pos.data(), GL_STATIC_DRAW);
 
-    read_pos += vertex_buffer_size;
+    glGenBuffers(1, &GLdata->uvVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, GLdata->uvVBO);
+    glBufferData(GL_ARRAY_BUFFER, uv.size()*sizeof(float), uv.data(), GL_STATIC_DRAW);
 
-    // ---- Index buffer (GL_UNSIGNED_SHORT) ----
-    uint32_t index_buffer_size = *reinterpret_cast<const uint32_t*>(read_pos);
-    read_pos += 4;
-
-    GLdata->numIndexes = index_buffer_size / sizeof(GLushort);
-    printf("index count %u\n", (unsigned)GLdata->numIndexes);
-
-    glGenBuffers(1, &GLdata->indexVAO);              // NOTE: this is an EBO, name kept for compatibility
+    glGenBuffers(1, &GLdata->indexVAO); // (EBO)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLdata->indexVAO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 (GLsizeiptr)index_buffer_size,
-                 read_pos, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, ibuf_sz, indices, GL_STATIC_DRAW);
 
-    // No VAO state captured here. Attribute setup happens before draw.
+    // tidy (optional)
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 
