@@ -34,6 +34,7 @@ INCLUDE_DIRECTORIES(
   glew/include
   glfw/include
   assimp/include
+  ${CMAKE_BINARY_DIR}/assimp/include
   glm
   soil
   /home/olas/work/si_vis/glfw/include

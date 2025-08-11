@@ -15,34 +15,66 @@
 
 #define SOIL_CHECK_FOR_GL_ERRORS 1
 
-#ifdef WIN32
-	#define WIN32_LEAN_AND_MEAN
-	#include <windows.h>
-	#include <wingdi.h>
-	#include <GL/gl.h>
+// gl_includes.h (or inline where you had the old block)
+
+#if defined(_WIN32)
+  #define WIN32_LEAN_AND_MEAN
+  #include <windows.h>
+  #include <wingdi.h>
+  #include <GL/gl.h>
+  #ifndef APIENTRY
+  #  define APIENTRY __stdcall
+  #endif
+
+#elif defined(__EMSCRIPTEN__)
+  // Web build (WebGL via GLES)
+  // Prefer GLES3 if your shaders are ES 3.0; otherwise switch to <GLES2/gl2.h>
+  #include <GLES3/gl3.h>
+  #ifndef APIENTRY
+  #  define APIENTRY
+  #endif
+  // Some legacy code still uses GL_CLAMP; not in ES/WebGL
+  #ifndef GL_CLAMP
+  #  define GL_CLAMP GL_CLAMP_TO_EDGE
+  #endif
+
 #elif defined(__APPLE__) || defined(__APPLE_CC__)
-	/*	I can't test this Apple stuff!	*/
-	#include <OpenGL/gl.h>
-	#include <Carbon/Carbon.h>
-	#define APIENTRY
+  // Modern macOS (GLFW handles Cocoa; don't include Carbon)
+  // If you use a core profile, prefer gl3.h:
+  #include <OpenGL/gl3.h>
+  #ifndef APIENTRY
+  #  define APIENTRY
+  #endif
+
 #else
-#ifdef HAVEGLES
-//#include "GLES/gl.h"
-#include "GLES2/gl2.h"
-#ifndef APIENTRY
-#define APIENTRY
-#define GL_CLAMP     GL_CLAMP_TO_EDGE
+  // Linux/native desktop
+  #ifdef HAVEGLES
+    #include <GLES2/gl2.h>   // or <GLES3/gl3.h> if you target ES3
+    #ifndef APIENTRY
+    #  define APIENTRY
+    #endif
+    #ifndef GL_CLAMP
+    #  define GL_CLAMP GL_CLAMP_TO_EDGE
+    #endif
+  #else
+    // Desktop OpenGL; don't pull in GLX when using GLFW
+    #include <GL/gl.h>
+    // #include <GL/glx.h> // <- avoid if you use GLFW; it brings its own context handling
+  #endif
 #endif
-#else
-	#include <GL/gl.h>
-	#include <GL/glx.h>
-#endif
-#endif
+
+
 
 #include "SOIL.h"
 #include "stb_image_aug.h"
 #include "image_helper.h"
 #include "image_DXT.h"
+
+
+#ifdef __EMSCRIPTEN__
+  #include <emscripten/emscripten.h>
+  #include <emscripten/html5.h>
+#endif
 
 #include <stdlib.h>
 #include <string.h>
@@ -1957,85 +1989,102 @@ int query_cubemap_capability( void )
 	return has_cubemap_capability;
 }
 
-int query_DXT_capability( void )
+int query_DXT_capability(void)
 {
-	/*	check for the capability	*/
-	if( has_DXT_capability == SOIL_CAPABILITY_UNKNOWN )
-	{
-		/*	we haven't yet checked for the capability, do so	*/
-		if( NULL == strstr(
-				(char const*)glGetString( GL_EXTENSIONS ),
-				"GL_EXT_texture_compression_s3tc" ) )
-		{
-			/*	not there, flag the failure	*/
-			has_DXT_capability = SOIL_CAPABILITY_NONE;
-		} else
-		{
-			/*	and find the address of the extension function	*/
-			P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC ext_addr = NULL;
-			#ifdef WIN32
-				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)
-						wglGetProcAddress
-						(
-							"glCompressedTexImage2DARB"
-						);
-			#elif defined(__APPLE__) || defined(__APPLE_CC__)
-				/*	I can't test this Apple stuff!	*/
-				CFBundleRef bundle;
-				CFURLRef bundleURL =
-					CFURLCreateWithFileSystemPath(
-						kCFAllocatorDefault,
-						CFSTR("/System/Library/Frameworks/OpenGL.framework"),
-						kCFURLPOSIXPathStyle,
-						true );
-				CFStringRef extensionName =
-					CFStringCreateWithCString(
-						kCFAllocatorDefault,
-						"glCompressedTexImage2DARB",
-						kCFStringEncodingASCII );
-				bundle = CFBundleCreate( kCFAllocatorDefault, bundleURL );
-				assert( bundle != NULL );
-				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)
-						CFBundleGetFunctionPointerForName
-						(
-							bundle, extensionName
-						);
-				CFRelease( bundleURL );
-				CFRelease( extensionName );
-				CFRelease( bundle );
-			#else
-#ifdef HAVEGLES
-            ext_addr =  (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)
-                    eglGetProcAddress
-                    (
-                        (const GLubyte *)"glCompressedTexImage2DARB"
-                    );
+    if (has_DXT_capability != SOIL_CAPABILITY_UNKNOWN)
+        return has_DXT_capability;
+
+#ifdef __EMSCRIPTEN__
+    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_get_current_context();
+    if (ctx <= 0) {
+        has_DXT_capability = SOIL_CAPABILITY_NONE;
+        return has_DXT_capability;
+    }
+
+    int ok = 0;
+    ok |= (emscripten_webgl_enable_extension(ctx, "EXT_texture_compression_s3tc")    == EMSCRIPTEN_RESULT_SUCCESS);
+    ok |= (emscripten_webgl_enable_extension(ctx, "WEBGL_compressed_texture_s3tc")   == EMSCRIPTEN_RESULT_SUCCESS);
+    ok |= (emscripten_webgl_enable_extension(ctx, "MOZ_WEBGL_compressed_texture_s3tc")== EMSCRIPTEN_RESULT_SUCCESS);
+    ok |= (emscripten_webgl_enable_extension(ctx, "WEBKIT_WEBGL_compressed_texture_s3tc")== EMSCRIPTEN_RESULT_SUCCESS);
+
+    if (ok) {
+        /* In WebGL/GLES the core symbol is glCompressedTexImage2D */
+        soilGlCompressedTexImage2D = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)glCompressedTexImage2D;
+        has_DXT_capability = SOIL_CAPABILITY_PRESENT;
+    } else {
+        has_DXT_capability = SOIL_CAPABILITY_NONE;
+    }
+    return has_DXT_capability;
+#elif defined(HAVEGLES)
+    // OpenGL ES: function exists; check extension string for S3TC support
+    const char* ext = (const char*)glGetString(GL_EXTENSIONS);
+    if (!ext || (!strstr(ext, "GL_EXT_texture_compression_s3tc") &&
+                 !strstr(ext, "GL_EXT_texture_compression_dxt1"))) {
+        has_DXT_capability = SOIL_CAPABILITY_NONE;
+        return has_DXT_capability;
+    }
+    soilGlCompressedTexImage2D = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)glCompressedTexImage2D;
+    has_DXT_capability = SOIL_CAPABILITY_PRESENT;
+    return has_DXT_capability;
+
+#elif defined(_WIN32)
+    // Desktop GL on Windows: look up ARB entry
+    const char* ext = (const char*)glGetString(GL_EXTENSIONS);
+    if (!ext || !strstr(ext, "GL_EXT_texture_compression_s3tc")) {
+        has_DXT_capability = SOIL_CAPABILITY_NONE;
+        return has_DXT_capability;
+    }
+    P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC ext_addr =
+        (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)wglGetProcAddress("glCompressedTexImage2DARB");
+    if (!ext_addr) {
+        has_DXT_capability = SOIL_CAPABILITY_NONE;
+        return has_DXT_capability;
+    }
+    soilGlCompressedTexImage2D = ext_addr;
+    has_DXT_capability = SOIL_CAPABILITY_PRESENT;
+    return has_DXT_capability;
+
+#elif defined(__APPLE__) || defined(__APPLE_CC__)
+    // macOS desktop GL: check extension, then use CFBundle to fetch the symbol (legacy path)
+    const char* ext = (const char*)glGetString(GL_EXTENSIONS);
+    if (!ext || !strstr(ext, "GL_EXT_texture_compression_s3tc")) {
+        has_DXT_capability = SOIL_CAPABILITY_NONE;
+        return has_DXT_capability;
+    }
+    CFBundleRef bundle;
+    CFURLRef bundleURL = CFURLCreateWithFileSystemPath(kCFAllocatorDefault,
+                            CFSTR("/System/Library/Frameworks/OpenGL.framework"),
+                            kCFURLPOSIXPathStyle, true);
+    CFStringRef name = CFStringCreateWithCString(kCFAllocatorDefault,
+                            "glCompressedTexImage2DARB", kCFStringEncodingASCII);
+    bundle = CFBundleCreate(kCFAllocatorDefault, bundleURL);
+    P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC ext_addr =
+        (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)CFBundleGetFunctionPointerForName(bundle, name);
+    CFRelease(bundleURL); CFRelease(name); CFRelease(bundle);
+    if (!ext_addr) {
+        has_DXT_capability = SOIL_CAPABILITY_NONE;
+        return has_DXT_capability;
+    }
+    soilGlCompressedTexImage2D = ext_addr;
+    has_DXT_capability = SOIL_CAPABILITY_PRESENT;
+    return has_DXT_capability;
+
 #else
-				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)
-						glXGetProcAddressARB
-						(
-							(const GLubyte *)"glCompressedTexImage2DARB"
-						);
+    // Desktop GL on Linux/*nix
+    const char* ext = (const char*)glGetString(GL_EXTENSIONS);
+    if (!ext || !strstr(ext, "GL_EXT_texture_compression_s3tc")) {
+        has_DXT_capability = SOIL_CAPABILITY_NONE;
+        return has_DXT_capability;
+    }
+    P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC ext_addr =
+        (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)glXGetProcAddressARB(
+            (const GLubyte*)"glCompressedTexImage2DARB");
+    if (!ext_addr) {
+        has_DXT_capability = SOIL_CAPABILITY_NONE;
+        return has_DXT_capability;
+    }
+    soilGlCompressedTexImage2D = ext_addr;
+    has_DXT_capability = SOIL_CAPABILITY_PRESENT;
+    return has_DXT_capability;
 #endif
-			#endif
-			/*	Flag it so no checks needed later	*/
-			if( NULL == ext_addr )
-			{
-				/*	hmm, not good!!  This should not happen, but does on my
-					laptop's VIA chipset.  The GL_EXT_texture_compression_s3tc
-					spec requires that ARB_texture_compression be present too.
-					this means I can upload and have the OpenGL drive do the
-					conversion, but I can't use my own routines or load DDS files
-					from disk and upload them directly [8^(	*/
-				has_DXT_capability = SOIL_CAPABILITY_NONE;
-			} else
-			{
-				/*	all's well!	*/
-				soilGlCompressedTexImage2D = ext_addr;
-				has_DXT_capability = SOIL_CAPABILITY_PRESENT;
-			}
-		}
-	}
-	/*	let the user know if we can do DXT or not	*/
-	return has_DXT_capability;
 }
