@@ -108,19 +108,19 @@ const char* vs = GLSL(
         });
 
 
-//const char* fs = R"(
-//precision mediump float;
-//varying vec2 texcoord;
-//uniform sampler2D tex;
-//uniform vec4 colour;
-//void main() {
-//  vec2 coord = clamp(texcoord, 0.0, 1.0);
+const char* fs = R"(
+precision mediump float;
+varying vec2 texcoord;
+uniform sampler2D tex;
+uniform vec4 colour;
+void main() {
+  vec2 coord = clamp(texcoord, 0.0, 1.0);
   //gl_FragColor = texture2D(tex, coord) * colour;
-//  gl_FragColor = vec4(0.0,1.0,0.0,1.0);
-//}
-//)";
+  gl_FragColor = vec4(0.0,1.0,0.0,1.0);
+}
+)";
 
-        #if 1
+        #if 0
 const char* fs = GLSL(
             precision highp float;
             varying vec2 texcoord;
@@ -362,7 +362,7 @@ void do_frame(){
       GLuint attr_position = glGetAttribLocation(shader->Program, "position");
       GLuint attr_vtex = glGetAttribLocation(shader->Program, "vtex");
       GLint my_maxAttr; glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &my_maxAttr);
-     //printf("attr_position=%d attr_vtex=%d max=%d\n", attr_position, attr_vtex, my_maxAttr);
+     printf("attr_position=%d attr_vtex=%d max=%d\n", attr_position, attr_vtex, my_maxAttr);
 
 
       glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -424,16 +424,16 @@ void do_frame(){
 
           glUniform1i(glGetUniformLocation(shader->Program, "vtex"), 0);
 
-          glEnableVertexAttribArray(attr_vtex);
-          glBindBuffer(GL_ARRAY_BUFFER, staticData[q].uvVBO);
-          glVertexAttribPointer(
-          attr_vtex, // The attribute we want to configure
-          2, // size : U+V => 2
-          GL_FLOAT, // type
-          GL_FALSE, // normalized?
-          0, // stride
-          (void*)0 // array buffer offset
-          );
+          //glEnableVertexAttribArray(attr_vtex);
+          //glBindBuffer(GL_ARRAY_BUFFER, staticData[q].uvVBO);
+          //glVertexAttribPointer(
+          //attr_vtex, // The attribute we want to configure
+          //2, // size : U+V => 2
+          //GL_FLOAT, // type
+          //GL_FALSE, // normalized?
+          //0, // stride
+          //(void*)0 // array buffer offset
+          //);
 
 #endif
 
@@ -444,20 +444,19 @@ void do_frame(){
               glEnableVertexAttribArray(attr_position);
               glVertexAttribPointer(attr_position, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-              glActiveTexture(GL_TEXTURE0);
-              glBindTexture(GL_TEXTURE_2D, staticData[q].textureIx);   // see #3
-              glUniform1i(glGetUniformLocation(shader->Program, "tex"), 0);
-
-              glEnableVertexAttribArray(attr_vtex);
+              //glActiveTexture(GL_TEXTURE0);
+              //glBindTexture(GL_TEXTURE_2D, staticData[q].textureIx);   
+              //glUniform1i(glGetUniformLocation(shader->Program, "vtex"), 0);
               glBindBuffer(GL_ARRAY_BUFFER, staticData[q].uvVBO);
-              glVertexAttribPointer(attr_vtex, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+              if (attr_vtex >= 0) {
+                glEnableVertexAttribArray((GLuint)attr_vtex);
+                glVertexAttribPointer((GLuint)attr_vtex, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+              }
 
               glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, staticData[q].indexVAO);
               glDrawElements(GL_TRIANGLES, staticData[q].numIndexes, GL_UNSIGNED_SHORT, 0);
 
-              glDrawElements(GL_TRIANGLES, staticData[q].numIndexes, GL_UNSIGNED_SHORT, 0);
-              //glDrawArraysInstanced(GL_TRIANGLES, 0, staticData[q].numIndexes*2, staticData[q].numIndexes);
-
+              
           }
       }
       
@@ -472,9 +471,9 @@ void do_frame(){
           glBindTexture(GL_TEXTURE_2D, texture1);
           glUniform1i(glGetUniformLocation(shader->Program, "tex"), 0);  // Texture unit 0 is for base images.
 
-          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,staticData[0].indexVAO);
-          glBindVertexArray(VAO);
-          glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
+          //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,staticData[0].indexVAO);
+          //glBindVertexArray(VAO);
+          //glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
       }
       
       //if (mesh) mesh->render(shader->Program);
