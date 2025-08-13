@@ -89,25 +89,25 @@ glBindAttribLocation (ProgramID, 0, "vertexPosition_modelspace");
 //#define GLSL(src)  #src
 
 const char* vs = GLSL(
-        attribute vec3 position;
-        attribute vec3 normal;
-        attribute vec2 vtex;
+    attribute vec3 position;
+    attribute vec3 normal;
+    attribute vec2 vtex;
 
-        uniform mat4 model;
-        uniform mat4 view;
-        uniform mat4 projection;
+    uniform mat4 model;
+    uniform mat4 view;
+    uniform mat4 projection;
 
-        varying vec2 texcoord;
+    varying vec2 texcoord;
 
-        void main()
-        {
-            gl_Position = projection * view * model * vec4(position, 1.0);
-            //texcoord = vec2(vtex.x , vtex.y)  + vec2(0.5);
-            //texcoord  =  vtex;
-            texcoord = vec2(vtex.x, 1.0 - vtex.y);
-        });
+    void main()
+    {
+        gl_Position = projection * view * model * vec4(position, 1.0);
+        // Pass texture coordinates correctly (flip Y for most image formats)
+        texcoord = vec2(vtex.x, 1.0 - vtex.y);
+    }
+);
 
-
+#if 0
 const char* fs = R"(
 precision mediump float;
 varying vec2 texcoord;
@@ -119,6 +119,27 @@ void main() {
   gl_FragColor = vec4(0.0,1.0,0.0,1.0);
 }
 )";
+#endif
+
+const char* fs = GLSL(
+    precision highp float;
+    varying vec2 texcoord;
+    uniform sampler2D tex;
+    uniform vec4 colour;
+
+    void main()
+    {
+        vec2 coord;
+        coord.x = clamp(texcoord.x, 0.0, 1.0);
+        coord.y = clamp(texcoord.y, 0.0, 1.0);
+        
+        // FIXED: Actually use the texture instead of hardcoded color
+        gl_FragColor = texture2D(tex, coord);
+        
+        // Optional: blend with color uniform if needed
+        // gl_FragColor = texture2D(tex, coord) * colour;
+    }
+);
 
         #if 0
 const char* fs = GLSL(
@@ -288,196 +309,79 @@ void do_frame(){
 
 
 
-      // Bind Textures using texture units, Mesh might have loaded a new texture
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, texture1);
-      glUniform1i(glGetUniformLocation(shader->Program, "tex"), 0);
 
-      shader->Use();
+    // Clear before drawing
+    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // Use shader program
+    shader->Use();
 
+    // Set up matrices
+    glm::mat4 projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeigth, 0.1f, 1000.0f);
+    glm::mat4 view = camera.GetViewMatrix();
+    
+    GLint modelLoc = glGetUniformLocation(shader->Program, "model");
+    GLint viewLoc = glGetUniformLocation(shader->Program, "view");
+    GLint projLoc = glGetUniformLocation(shader->Program, "projection");
 
-      // Check and call events
-      glfwPollEvents();
-      Do_Movement();
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
+    // Set up model matrix with rotations
+    glm::mat4 model;
+    model = glm::translate(model, center);
+    if (rotating) {
+        angleX += 0.02;
+        angleY += 0.04;
+    }
+    model = model * glm::eulerAngleYXZ(angleX + offsetAngleX, angleZ, -(angleY + offsetAngleY));
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-      // Create transformations
-      glm::mat4 view;
-      glm::mat4 projection;
-      //view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-      //projection = glm::perspective(45.0f, (GLfloat)screenWidth / (GLfloat)screenHeigth, 0.1f, 100.0f);
-      // Get their uniform location
-      projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeigth, 0.1f, 100.0f);
-      view = camera.GetViewMatrix();
+    // Get attribute locations
+    GLint attr_position = glGetAttribLocation(shader->Program, "position");
+    GLint attr_vtex = glGetAttribLocation(shader->Program, "vtex");
+    GLint attr_normal = glGetAttribLocation(shader->Program, "normal");
 
-      GLint modelLoc = glGetUniformLocation(shader->Program, "model");
-      GLint viewLoc = glGetUniformLocation(shader->Program, "view");
-      GLint projLoc = glGetUniformLocation(shader->Program, "projection");
-      GLint mvpLoc = glGetUniformLocation(shader->Program, "mvp");
+    // FIXED: Set color uniform (white by default to not affect texture)
+    GLint colorLoc = glGetUniformLocation(shader->Program, "colour");
+    if (colorLoc >= 0) {
+        glUniform4f(colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
+    }
 
-      GLint maxAttr = 0; glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxAttr);
-        auto enable_attr = [&](GLint loc, GLint size, GLenum type, GLsizei stride, const void* off, GLuint vbo){
-            if (loc < 0 || loc >= maxAttr) return;           // <-- critical guard
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            glEnableVertexAttribArray((GLuint)loc);
-            glVertexAttribPointer((GLuint)loc, size, type, GL_FALSE, stride, off);
-        };
+    // Render all models
+    if (gMaxMdl > 0) {
+        for (int q = 0; q < gMaxMdl; q++) {
+            // FIXED: Proper texture binding for each model
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, staticData[q].textureIx);
+            GLint texLoc = glGetUniformLocation(shader->Program, "tex");
+            glUniform1i(texLoc, 0);
 
-
-      glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-      // Note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
-      glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-     // Transformation matrices
-     //glm::mat4 projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeigth, 0.1f, 100.0f);
-     //glm::mat4 view = camera.GetViewMatrix();
-     //glUniformMatrix4fv(glGetUniformLocation(shader->Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-     //glUniformMatrix4fv(glGetUniformLocation(shader->Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-
-
-      glm::mat4 model;
-      model = glm::translate(model, center);
-
-      if (rotating)
-      {
-          angleX+=0.02;
-          angleY+=0.04;
-      }
-
-      model=model*glm::eulerAngleYXZ(1*angleX+offsetAngleX,angleZ,-1*(angleY+offsetAngleY));
-
-
-      //model = glm::rotate(model, angleZ, glm::vec3(1.0f, 0.0f, 0.0f));
-      //model = glm::rotate(model, -1*angleX+offsetAngleX, glm::vec3(0.0f, 1.0f, 0.0f));
-      //model = glm::rotate(model, -angleY+offsetAngleY, glm::vec3(0.0f, 0.0f, 1.0f));
-
-
-/*
-      model = glm::rotate(model, angleX, glm::vec3(1.0f, 0.0f, 0.0f));
-      model = glm::rotate(model, angleY, glm::vec3(0.0f, 1.0f, 0.0f));
-      model = glm::rotate(model, angleZ, glm::vec3(0.0f, 0.0f, 1.0f));
-*/
-
-      GLuint attr_position = glGetAttribLocation(shader->Program, "position");
-      GLuint attr_vtex = glGetAttribLocation(shader->Program, "vtex");
-      GLint my_maxAttr; glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &my_maxAttr);
-     printf("attr_position=%d attr_vtex=%d max=%d\n", attr_position, attr_vtex, my_maxAttr);
-
-
-      glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-      glm::mat4 mvp=projection * view * model;
-
-      glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
-
-      //printf("max mdl %d\n",gMaxMdl);
-      if (gMaxMdl>0)
-      {
-        //printf("-");
-
-          for (int q=0;q<gMaxMdl;q++)
-          {
-              //printf("%d\n",q);
-              enable_attr(attr_position, 3, GL_FLOAT, 0, (void*)0, staticData[q].dataVBO);
-              enable_attr(attr_vtex,  2, GL_FLOAT, 0, (void*)0, staticData[q].uvVBO);
-
-                // bind & set only if valid
-                if (attr_position >= 0) {
+            // Set up vertex attributes
+            if (attr_position >= 0) {
                 glBindBuffer(GL_ARRAY_BUFFER, staticData[q].dataVBO);
                 glEnableVertexAttribArray(attr_position);
                 glVertexAttribPointer(attr_position, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-                }
-                if (attr_vtex >= 0) {
+            }
+
+            if (attr_vtex >= 0) {
                 glBindBuffer(GL_ARRAY_BUFFER, staticData[q].uvVBO);
                 glEnableVertexAttribArray(attr_vtex);
                 glVertexAttribPointer(attr_vtex, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-                }
+            }
 
-
-#if 1
-            //glEnableVertexAttribArray(attr_position);
-            //printf("%d\n",staticData[q].dataVBO);
-            glBindBuffer(GL_ARRAY_BUFFER, staticData[q].dataVBO);
+            // Draw with index buffer
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, staticData[q].indexVAO);
+            glDrawElements(GL_TRIANGLES, staticData[q].numIndexes, GL_UNSIGNED_SHORT, 0);
             
-            glVertexAttribPointer(
-            attr_position, // The attribute we want to configure
-            3, // size : X+Y+Z => 3
-            GL_FLOAT, // type
-            GL_FALSE, // normalized?
-            0, // stride
-            (void*)0 // array buffer offset
-            );
-#endif
+            // Clean up
+            if (attr_position >= 0) glDisableVertexAttribArray(attr_position);
+            if (attr_vtex >= 0) glDisableVertexAttribArray(attr_vtex);
+        }
+    }
 
-              //glUniform1i(glGetUniformLocation(shader->Program, "tex"), 0);  // Texture unit 0 is for base images.
-            //glTexImage2D();
-
-#if 1
-
-    //glVertexAttribPointer(Effect::TEXCOORD0_ATTR, 2, GL_FLOAT, GL_FALSE, 0, ms_texCoords);
-
-
-          glActiveTexture(GL_TEXTURE0);
-          glBindTexture(GL_TEXTURE_2D, staticData[q].textureIx);
-
-
-          glUniform1i(glGetUniformLocation(shader->Program, "vtex"), 0);
-
-          //glEnableVertexAttribArray(attr_vtex);
-          //glBindBuffer(GL_ARRAY_BUFFER, staticData[q].uvVBO);
-          //glVertexAttribPointer(
-          //attr_vtex, // The attribute we want to configure
-          //2, // size : U+V => 2
-          //GL_FLOAT, // type
-          //GL_FALSE, // normalized?
-          //0, // stride
-          //(void*)0 // array buffer offset
-          //);
-
-#endif
-
-              //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,staticData[q].indexVAO);
-              //glBindVertexArray(staticData[q].indexVAO);
-
-              glBindBuffer(GL_ARRAY_BUFFER, staticData[q].dataVBO);
-              glEnableVertexAttribArray(attr_position);
-              glVertexAttribPointer(attr_position, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-              //glActiveTexture(GL_TEXTURE0);
-              //glBindTexture(GL_TEXTURE_2D, staticData[q].textureIx);   
-              //glUniform1i(glGetUniformLocation(shader->Program, "vtex"), 0);
-              glBindBuffer(GL_ARRAY_BUFFER, staticData[q].uvVBO);
-              if (attr_vtex >= 0) {
-                glEnableVertexAttribArray((GLuint)attr_vtex);
-                glVertexAttribPointer((GLuint)attr_vtex, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-              }
-
-              glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, staticData[q].indexVAO);
-              glDrawElements(GL_TRIANGLES, staticData[q].numIndexes, GL_UNSIGNED_SHORT, 0);
-
-              
-          }
-      }
-      
-      //printf("mdl_index_count %d",mdl_index_count);
-      if (mdl_index_count>0)      
-      {
-          printf(".");
-          // Draw mdl :-P
-          //glBindMultiTextureEXT(GL_TEXTURE0, GL_TEXTURE_2D, texture1);
-          //glUniform1i(glGetUniformLocation(shader->Program, "tex"), 0);
-          glActiveTexture(GL_TEXTURE0);
-          glBindTexture(GL_TEXTURE_2D, texture1);
-          glUniform1i(glGetUniformLocation(shader->Program, "tex"), 0);  // Texture unit 0 is for base images.
-
-          //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,staticData[0].indexVAO);
-          //glBindVertexArray(VAO);
-          //glDrawElements(GL_TRIANGLES, mdl_index_count, GL_UNSIGNED_SHORT, 0);
-      }
-      
-      //if (mesh) mesh->render(shader->Program);
-      glfwSwapBuffers(window);
+    glfwSwapBuffers(window);
 }
 
 
@@ -673,33 +577,84 @@ int main(int argc, char* argv[])
    }
 */
 
-   //setupTestData();
-   //glColor3f(0.8f, 0.1f, 0.1f);
+   // After window creation and before render loop:
+    
+    // Enable depth testing for 3D rendering
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    
+    // Enable blending for transparency
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    // Set up texture parameters globally
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    
+    // Initialize shader with fixed shaders above
+    shader = new Shader(vs, fs, NULL); 
+    
+    // Bind attribute locations BEFORE linking
+    glBindAttribLocation(shader->Program, 0, "position");
+    glBindAttribLocation(shader->Program, 1, "normal");  
+    glBindAttribLocation(shader->Program, 2, "vtex");
+    
+    // Link the shader program
+    shader->linkProg();
+    
+    // ... rest of initialization ...
+    
+    // Main loop with proper clearing
+    emscripten_set_main_loop(do_frame, 60, 0); // 60 FPS instead of 20
 
-   glEnable(GL_BLEND);
-   glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-
-   shader->linkProg();
-   std::cout << "Use Shader" << std::endl; 
-
-   shader->Use();
-
-
-   std::cout << "Main loop" << std::endl; 
-
-    // Clear the colorbuffer
-    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-    emscripten_set_main_loop(do_frame, 20, 0);
-
-//while (!glfwWindowShouldClose(window)) {
-//}
-//delete mesh;
-
-return 0;
+    return 0;
 }
+
+// 5. ADDITIONAL HELPER: Texture loading function for Emscripten
+GLuint LoadTextureEmscripten(const char* path) {
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    
+    int width, height, channels;
+    unsigned char* data = SOIL_load_image(path, &width, &height, &channels, SOIL_LOAD_RGBA);
+    
+    if (data) {
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        
+        // Upload texture data
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, 
+                     GL_RGBA, GL_UNSIGNED_BYTE, data);
+        
+        // Set texture parameters for WebGL
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        
+        // No mipmaps in WebGL ES 2.0 for NPOT textures
+        // Only generate mipmaps if texture is power of 2
+        if ((width & (width - 1)) == 0 && (height & (height - 1)) == 0) {
+            glGenerateMipmap(GL_TEXTURE_2D);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        }
+        
+        SOIL_free_image_data(data);
+        printf("Loaded texture %s (%dx%d)\n", path, width, height);
+    } else {
+        printf("Failed to load texture %s: %s\n", path, SOIL_last_result());
+    }
+    
+    return textureID;
+}
+
+
+// 6. DEBUG HELPER: Check for OpenGL errors
+void CheckGLError(const char* context) {
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        printf("OpenGL error in %s: 0x%x\n", context, err);
+    }
+}
+
 
 #pragma region "User input"
 
