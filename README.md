@@ -6,6 +6,10 @@ pi3d is an openGL/GLES viewer. The goal of this project is to make it possible t
 Now it also connects to a ESP8266 with a BNO055 sensor.
 https://learn.adafruit.com/bno055-absolute-orientation-sensor-with-raspberry-pi-and-beaglebone-black/hardware?view=all
 
+Here you can test the code in a browser. https://ebiroll.github.io/pi3d/index.html
+Scroll down to Live Demo.
+
+
 ## Build
 
 It uses assview and glm included as a submodules. Try
